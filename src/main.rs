@@ -1,5 +1,4 @@
 mod mixer;
-mod camera;
 
 use bevy::prelude::*;
 
