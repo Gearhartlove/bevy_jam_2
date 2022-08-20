@@ -28,7 +28,7 @@ fn main() {
         .insert_resource(ClearColor(Color::hex("323E40").unwrap())) // sets background color
         .insert_resource(ImageSettings::default_nearest()) // prevents blurry sprite
         .add_plugins(DefaultPlugins)
-        .add_plugins(RegistryPlugin)
+        .add_plugin(RegistryPlugin)
         .add_plugin(WorldInspectorPlugin::new()) // debugging window
         .add_plugin(MixerPlugin)
         .add_state(AppState::Game)
