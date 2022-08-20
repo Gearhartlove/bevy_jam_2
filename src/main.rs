@@ -1,6 +1,9 @@
 mod mixer;
+mod registry;
+mod element;
 
 use bevy::prelude::*;
+use crate::registry::RegistryPlugin;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum AppState {
@@ -11,6 +14,7 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::hex("323E40").unwrap()))
         .add_plugins(DefaultPlugins)
+        .add_plugins(RegistryPlugin)
         .add_startup_system(setup_camera)
         .run();
 }
