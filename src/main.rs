@@ -1,4 +1,3 @@
-mod mixer;
 mod registry;
 mod element;
 mod mixer;
@@ -35,7 +34,6 @@ fn main() {
         .add_plugin(RegistryPlugin)
         .add_plugin(WorldInspectorPlugin::new()) // debugging window
         .add_plugin(MixerPlugin)
-        .add_state(AppState::Game)
         .add_startup_system(setup_camera)
         .run();
 }
