@@ -14,3 +14,7 @@ opt-level = 3
 
 [dependencies]
 bevy = "0.8.0"
+serde = "1.0.143"
+serde_json = "1.0.83"
+convert_case = "0.5.0"
+scan_dir = "0.3.3"

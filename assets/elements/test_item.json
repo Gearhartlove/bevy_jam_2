@@ -1,0 +1,6 @@
+{
+  "name" : "Test Item",
+  "sprite" : "test/sprite/path",
+  "desc" : "This is a Test Description",
+  "id": "test_element"
+}
