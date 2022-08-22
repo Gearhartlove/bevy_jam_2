@@ -66,7 +66,7 @@ fn setup_mixer(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn_bundle(SpriteBundle {
         texture: asset_server.load("sprites/mixer.png"),
         sprite: Sprite {
-            custom_size: Some(Vec2::splat(150.)),
+            custom_size: Some(Vec2::splat(160.)),
             ..default()
         },
         transform: Transform::from_xyz(0., -250., 0.),
