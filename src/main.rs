@@ -6,15 +6,13 @@ mod slicer;
 
 use bevy::prelude::*;
 use bevy::render::texture::ImageSettings;
-use bevy_inspector_egui::{InspectorPlugin, WorldInspectorPlugin};
-use crate::mixer::MixerPlugin;
-use crate::AppState::{Game, Setup};
-use crate::registry::{MixerRecipeIden, Registry, RegistryPlugin};
+use bevy_inspector_egui::{WorldInspectorPlugin};
+use crate::AppState::{Game};
+use crate::registry::{MixerRecipeIden, RegistryPlugin};
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum AppState {
     Game,
-    Setup,
 }
 
 fn main() {

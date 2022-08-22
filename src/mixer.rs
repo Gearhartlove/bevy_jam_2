@@ -1,84 +1,42 @@
-use std::fs;
-use std::path::Path;
 use bevy::prelude::Res;
-use scan_dir::ScanDir;
-use serde::{Serialize, Deserialize};
 use crate::MixerRecipeIden;
-use crate::registry::{FurnaceRecipeIden, Registry};
+use crate::registry::{Registry};
 use bevy::prelude::*;
-use crate::AppState;
+use crate::element::Element;
 
-#[derive(PartialEq, Serialize, Deserialize, Default, Debug, Clone)]
+#[derive(PartialEq, Default, Debug, Clone)]
 pub struct MixerRecipe {
-    pub first : String,
-    pub second : String,
-    pub result: String,
-    pub id : String
-}
-
-pub fn get_result(element_a : String, element_b : String, registry : &Res<Registry>) -> Option<String> {
-    let iden = MixerRecipeIden::new(element_a.as_str(), element_b.as_str());
-    if let Some(fr)  = registry.mixer_recipe_registry.get(&iden) {
-        Some(fr.result.clone())
-    } else {
-        None
-    }
+    pub first: Element,
+    pub second: Element,
+    pub result: Element,
 }
 
 impl MixerRecipe {
-    pub fn new(first: &'static str, second: &'static str, result: &'static str, id: &'static str) -> Self {
+    pub const LEGEND_DAIRY: MixerRecipe = MixerRecipe::new(Element::SHAVED_ICE, Element::LEGEND_DAIRY, Element::UTTER_ICE_CREAM);
+
+    pub const RECIPES: [MixerRecipe; 1] = [
+        MixerRecipe::LEGEND_DAIRY,
+    ];
+
+    pub const fn new(first: Element, second: Element, result: Element) -> Self {
         Self {
-            first: "".to_string(),
-            second: "".to_string(),
-            result: "".to_string(),
-            id: "".to_string()
+            first,
+            second,
+            result,
         }
-    }
-    pub fn load_from_dir(dir: &str) -> Vec<MixerRecipe> {
-        ScanDir::files().read(dir, |iter| {
-            let data: Vec<MixerRecipe> = iter
-                .filter(|(_, name)| name.ends_with(".json"))
-                .map(|(entry, _)| MixerRecipe::load_from_path(entry.path().as_path()))
-                .filter(|element| element.is_some())
-                .map(|element| element.unwrap())
-                .collect();
-            data
-        }).unwrap()
     }
 
-    pub fn load_from_path(path: &Path) -> Option<MixerRecipe> {
-        let result = fs::read_to_string(path);
-        if let Ok(json) = result {
-            let data = serde_json::from_str::<MixerRecipe>(json.as_str());
-            if let Ok(data) = data {
-                Some(data)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+    pub fn id(&self) -> String {
+        let id = format!("{}_{}_{}", self.first.id, self.second.id, self.result.id);
+        return id;
     }
 }
 
-pub struct MixerPlugin;
-
-impl Plugin for MixerPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(AppState::Game)
-            .with_system(setup_mixer));
+pub fn get_result(element_a: Element, element_b: Element, registry: &Res<Registry>) -> Option<Element> {
+    let iden = MixerRecipeIden::new(element_a, element_b);
+    if let Some(mr) = registry.mixer_recipe_registry.get(&iden) {
+        Some(mr.result.clone())
+    } else {
+        None
     }
-}
-
-fn setup_mixer(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn_bundle(SpriteBundle {
-        texture: asset_server.load("sprites/mixer.png"),
-        sprite: Sprite {
-            custom_size: Some(Vec2::splat(160.)),
-            ..default()
-        },
-        transform: Transform::from_xyz(0., -250., 0.),
-        ..default()
-    })
-        .insert(Name::new("Mixer"));
 }

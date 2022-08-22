@@ -1,47 +1,27 @@
-use std::fs;
-use std::path::Path;
-use scan_dir::ScanDir;
-use serde::{Serialize, Deserialize};
-use crate::mixer::MixerRecipe;
+use crate::element::Element;
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Default)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct SlicerRecipe {
-    pub object : String,
-    pub result : String,
-    pub id : String
+    pub object : Element,
+    pub result : Element,
 }
 
 impl SlicerRecipe {
-    pub fn new(object: &'static str, result: &'static str, id: &'static str) -> Self {
+    const SHAVED_ICE: SlicerRecipe = SlicerRecipe::new(Element::GLACIER_ICE, Element::SHAVED_ICE);
+
+    pub const RECIPES: [SlicerRecipe; 1] = [
+        SlicerRecipe::SHAVED_ICE,
+    ];
+
+    pub const fn new(object: Element, result: Element) -> Self {
         Self {
-            object: object.to_string(),
-            result: result.to_string(),
-            id: id.to_string()
+            object,
+            result,
         }
-    }
-    pub fn load_from_dir(dir : &str) -> Vec<SlicerRecipe> {
-        ScanDir::files().read(dir, |iter| {
-            let data : Vec<SlicerRecipe> = iter
-                .filter(|(_, name)| name.ends_with(".json"))
-                .map(|(entry, _)| SlicerRecipe::load_from_path(entry.path().as_path()))
-                .filter(|element| element.is_some())
-                .map(|element| element.unwrap())
-                .collect();
-            data
-        }).unwrap()
     }
 
-    pub fn load_from_path(path : &Path) -> Option<SlicerRecipe> {
-        let result = fs::read_to_string(path);
-        if let Ok(json) = result {
-            let data = serde_json::from_str::<SlicerRecipe>(json.as_str());
-            if let Ok(data) = data {
-                Some(data)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+    pub fn id(&self) -> String {
+        let id = format!("{}_{}", self.object.id, self.result.id);
+        return id;
     }
 }

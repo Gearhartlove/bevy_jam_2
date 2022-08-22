@@ -1,9 +1,8 @@
 use std::hash::{Hash, Hasher};
 use bevy::prelude::*;
 use bevy::utils::HashMap;
-use crate::AppState;
-use crate::element::{Element, ElementData};
-use crate::furnace::{FurnaceData, FurnaceRecipe};
+use crate::element::{Element};
+use crate::furnace::{FurnaceRecipe};
 use crate::mixer::MixerRecipe;
 use crate::slicer::SlicerRecipe;
 
@@ -12,15 +11,15 @@ use crate::slicer::SlicerRecipe;
 //==================================================================================================
 #[derive(Eq, Debug)]
 pub struct MixerRecipeIden {
-    item_a: String,
-    item_b: String,
+    item_a: Element,
+    item_b: Element,
 }
 
 impl MixerRecipeIden {
-    pub fn new(item_a: &str, item_b: &str) -> Self {
+    pub fn new(item_a: Element, item_b: Element) -> Self {
         MixerRecipeIden {
-            item_a: item_a.to_string(),
-            item_b: item_b.to_string(),
+            item_a,
+            item_b,
         }
     }
 }
@@ -35,7 +34,7 @@ impl PartialEq for MixerRecipeIden {
 
 impl Hash for MixerRecipeIden {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        let combined = format!("{}{}", self.item_a, self.item_b);
+        let combined = format!("{}{}", self.item_a.id, self.item_b.id);
         let mut chars: Vec<char> = combined.chars().collect();
         chars.sort();
         chars.hash(state);
@@ -67,7 +66,7 @@ impl FurnaceRecipeIden {
 
 pub struct Registry {
     pub mixer_recipe_registry: HashMap<MixerRecipeIden, MixerRecipe>,
-    pub furnace_recipe_registry: HashMap<FurnaceRecipeIden, FurnaceData>,
+    pub furnace_recipe_registry: HashMap<FurnaceRecipeIden, FurnaceRecipe>,
     pub slicer_recipe_registry: HashMap<Element, SlicerRecipe>,
 }
 
@@ -92,52 +91,43 @@ impl Plugin for RegistryPlugin {
     }
 }
 
-fn setup_registry(registry: &mut Registry) -> Registry {
-    let mut registry = Registry::default();
+fn setup_registry(_registry: &mut Registry) -> Registry {
+    let mut _registry = Registry::default();
 
     // mixer recipe
-    add_mixer_recipes_to_registry(&mut registry);
+    add_mixer_recipes_to_registry(&mut _registry);
     // furnace recipe
-    add_furnace_recipes_to_registry(&mut registry);
+    add_furnace_recipes_to_registry(&mut _registry);
     // slicer recipe
-    add_slicer_recipes_to_registry(&mut registry);
+    add_slicer_recipes_to_registry(&mut _registry);
 
-    println!("Mixer Recipes : {:?}", registry.mixer_recipe_registry);
-    println!("Furnace Recipes : {:?}", registry.furnace_recipe_registry);
-    println!("Slicer Recipes : {:?}", registry.slicer_recipe_registry);
+    println!("Mixer Recipes : {:?}", _registry.mixer_recipe_registry);
+    println!("Furnace Recipes : {:?}", _registry.furnace_recipe_registry);
+    println!("Slicer Recipes : {:?}", _registry.slicer_recipe_registry);
 
-    return registry;
+    return _registry;
 }
 
 // FurnaceRecipe { fuel, object, result, id }
 fn add_furnace_recipes_to_registry(registry: &mut Registry) {
     for fr in FurnaceRecipe::RECIPES {
-        registry.furnace_recipe_registry.insert(FurnaceRecipeIden::new(fr.data.fuel.clone(), fr.data.object.clone()), fr.data.clone());
+        registry.furnace_recipe_registry.insert(FurnaceRecipeIden::new(fr.fuel.clone(), fr.object.clone()), fr.clone());
     }
 }
 
 
 // slicer { object, result, id }
 fn add_slicer_recipes_to_registry(registry: &mut Registry) {
-    // let slicer_recipes = vec!(
-    //     // Frost Bottle
-    //     SlicerRecipe::new("Glacier Ice", "Shaved Ice")
-    // );
-
-    // for sr in slicer_recipes {
-    //     if registry.element_registry.contains_key(&sr.object) && registry.element_registry.contains_key(&sr.result) {
-    //         registry.slicer_recipe_registry.insert(sr.object.clone(), sr);
-    //     } else {
-    //         warn!("Recipe '{}' was rejected: Input or output element not registered.", sr.id)
-    //     }
-    // }
+    for sr in SlicerRecipe::RECIPES {
+        registry.slicer_recipe_registry.insert(sr.object.clone(), sr);
+    }
 }
 
 // mixer { first, second, result, id }
 // note: order of first and second does not matter
 fn add_mixer_recipes_to_registry(registry: &mut Registry) {
-    // let mixer_recipes = vec!(
-    //     MixerRecipe::new("Legend Dairy", "Shaved Ice", "Legend ice cream"),
-    // );
+    for mr in MixerRecipe::RECIPES {
+        registry.mixer_recipe_registry.insert(MixerRecipeIden::new(mr.first.clone(), mr.second.clone()), mr.clone());
+    }
 }
 
