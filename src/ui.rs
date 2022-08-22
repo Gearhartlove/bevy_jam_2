@@ -174,8 +174,13 @@ fn drag_item(
 
         let is_within = rect.is_within(game_helper.mouse_world_pos());
 
-        if is_within && buttons.just_pressed(MouseButton::Left) && drag_info.currently_dragging.is_none() && slot.element.is_some() {
+        if is_within && buttons.just_pressed(MouseButton::Right) && slot.element.is_some() && slot.can_change {
+            slot.element = None;
+        }
+
+        if is_within && buttons.just_pressed(MouseButton::Left) && drag_info.currently_dragging.is_none() && slot.element.is_some() && !slot.can_change {
             drag_info.currently_dragging = Some(slot.element.as_ref().unwrap().clone());
+            drag_info.should_change_sprite = true;
         }
 
         if buttons.just_released(MouseButton::Left) && drag_info.currently_dragging.is_some() {
@@ -209,7 +214,7 @@ pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
             ..default()
         })
-        .insert(Slot{element : Some("fire_pepper".to_string()), can_change: true})
+        .insert(Slot{element : Some("fire_pepper".to_string()), can_change: false})
         .insert(Name::new("Pepper"));
 
     commands
