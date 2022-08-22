@@ -72,11 +72,13 @@ pub struct Registry {
 
 impl Default for Registry {
     fn default() -> Self {
+        println!("0");
         let mut registry = Registry {
             mixer_recipe_registry: Default::default(),
             furnace_recipe_registry: Default::default(),
             slicer_recipe_registry: Default::default(),
         };
+        println!("1");
         setup_registry(&mut registry);
         return registry;
     }
@@ -91,11 +93,10 @@ impl Plugin for RegistryPlugin {
     }
 }
 
-fn setup_registry(_registry: &mut Registry) -> Registry {
-    let mut _registry = Registry::default();
+fn setup_registry(mut _registry: &mut Registry) {
 
     // mixer recipe
-    add_mixer_recipes_to_registry(&mut _registry);
+    add_mixer_recipes_to_registry(_registry);
     // furnace recipe
     add_furnace_recipes_to_registry(&mut _registry);
     // slicer recipe
@@ -104,8 +105,6 @@ fn setup_registry(_registry: &mut Registry) -> Registry {
     println!("Mixer Recipes : {:?}", _registry.mixer_recipe_registry);
     println!("Furnace Recipes : {:?}", _registry.furnace_recipe_registry);
     println!("Slicer Recipes : {:?}", _registry.slicer_recipe_registry);
-
-    return _registry;
 }
 
 // FurnaceRecipe { fuel, object, result, id }
@@ -127,6 +126,7 @@ fn add_slicer_recipes_to_registry(registry: &mut Registry) {
 // note: order of first and second does not matter
 fn add_mixer_recipes_to_registry(registry: &mut Registry) {
     for mr in MixerRecipe::RECIPES {
+        println!("{:?}", mr);
         registry.mixer_recipe_registry.insert(MixerRecipeIden::new(mr.first.clone(), mr.second.clone()), mr.clone());
     }
 }
