@@ -26,6 +26,14 @@ pub fn get_result(element_a : String, element_b : String, registry : &Res<Regist
 }
 
 impl MixerRecipe {
+    pub fn new(first: &'static str, second: &'static str, result: &'static str, id: &'static str) -> Self {
+        Self {
+            first: "".to_string(),
+            second: "".to_string(),
+            result: "".to_string(),
+            id: "".to_string()
+        }
+    }
     pub fn load_from_dir(dir: &str) -> Vec<MixerRecipe> {
         ScanDir::files().read(dir, |iter| {
             let data: Vec<MixerRecipe> = iter
