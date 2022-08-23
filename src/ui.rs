@@ -9,6 +9,7 @@ use bevy::render::render_resource::Texture;
 use bevy::utils::tracing::event;
 use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier2d::prelude::Collider;
+use crate::element::Element;
 use crate::GameHelper;
 use crate::registry::Registry;
 
@@ -32,16 +33,15 @@ impl Plugin for UiPlugin {
 //==================================================================================================
 
 #[derive(Debug)]
-pub struct DropElementEvent(Vec2, String);
+pub struct DropElementEvent(Vec2, Element);
 
 //==================================================================================================
 //                          DragInfo Resource
 //==================================================================================================
 
 pub struct DragInfo {
-    pub currently_dragging : Option<String>,
+    pub currently_dragging : Option<Element>,
     pub should_change_sprite : bool,
-
 }
 
 impl Default for DragInfo {
@@ -94,8 +94,8 @@ pub struct DragEntity;
 
 #[derive(Component, Default)]
 pub struct Slot{
-    element : Option<String>,
-    can_change : bool
+    pub element : Option<Element>,
+    pub can_change : bool
 }
 
 impl Slot {
@@ -120,14 +120,12 @@ impl Slot {
 
 fn render_slots(
     mut slot : Query<(&Slot, &mut Handle<Image>, &mut Visibility)>,
-    asset_server: Res<AssetServer>,
-    registry : Res<Registry>
+    asset_server: Res<AssetServer>
 ) {
     for (s, mut handle, mut visibility) in slot.iter_mut() {
-        if s.element.is_some() && registry.element_registry.contains_key(s.element.as_ref().unwrap().as_str()) {
-            let element_data = registry.element_registry.get(s.element.as_ref().unwrap().as_str()).unwrap();
+        if s.element.is_some() {
             visibility.is_visible = true;
-            let sprite = asset_server.load(element_data.sprite.as_str());
+            let sprite = asset_server.load(s.element.as_ref().unwrap().sprite_file_path().as_str());
             *handle = sprite;
         } else {
             visibility.is_visible = false;
@@ -137,8 +135,7 @@ fn render_slots(
 
 fn render_dragging (
     mut drag_entity : Query<(&mut Transform, &mut Handle<Image>, &mut Visibility), With<DragEntity>>,
-    registry : Res<Registry>,
-    drag_info : Res<DragInfo>,
+    mut drag_info : ResMut<DragInfo>,
     game_helper : Res<GameHelper>,
     asset_server: Res<AssetServer>
 ) {
@@ -146,10 +143,8 @@ fn render_dragging (
 
     if drag_info.currently_dragging.is_some() {
         if drag_info.should_change_sprite {
-            let element = registry.element_registry.get(drag_info.currently_dragging.as_ref().unwrap());
-            if let Some(element) = element {
-                *handle = asset_server.load(element.sprite.as_str())
-            }
+            *handle = asset_server.load(drag_info.currently_dragging.as_ref().unwrap().sprite_file_path().as_str());
+            drag_info.should_change_sprite = false;
         }
 
         visibility.is_visible = true;
@@ -214,7 +209,7 @@ pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
             ..default()
         })
-        .insert(Slot{element : Some("fire_pepper".to_string()), can_change: false})
+        .insert(Slot{element : Some(Element::FIRE_PEPPER), can_change: false})
         .insert(Name::new("Pepper"));
 
     commands
