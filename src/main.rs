@@ -5,6 +5,7 @@ mod furnace;
 mod slicer;
 mod ui;
 mod helper;
+mod quest;
 
 use bevy::prelude::*;
 use bevy::render::texture::ImageSettings;
@@ -14,6 +15,7 @@ use crate::registry::{MixerRecipeIden, RegistryPlugin};
 use crate::ui::UiPlugin;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
 use crate::helper::{GameHelper, HelperPlugin};
+use crate::quest::{advance_current_quest, QuestPlugin};
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum AppState {
@@ -37,9 +39,9 @@ fn main() {
         .add_plugin(HelperPlugin)
         .add_plugin(UiPlugin)
         .add_plugin(WorldInspectorPlugin::new()) // debugging window
+        .add_plugin(QuestPlugin)
         //.add_plugin(MixerPlugin)
         .add_startup_system(setup_camera)
-        .add_startup_system(setup_game_background)
         .run();
 }
 

@@ -12,10 +12,10 @@ pub struct MixerRecipe {
 }
 
 impl MixerRecipe {
-    pub const LEGEND_DAIRY: MixerRecipe = MixerRecipe::new(Element::SHAVED_ICE, Element::LEGEND_DAIRY, Element::UTTER_ICE_CREAM);
+    pub const UTTER_ICE_CREAM: MixerRecipe = MixerRecipe::new(Element::SHAVED_ICE, Element::LEGEND_DAIRY, Element::UTTER_ICE_CREAM);
 
     pub const RECIPES: [MixerRecipe; 1] = [
-        MixerRecipe::LEGEND_DAIRY,
+        MixerRecipe::UTTER_ICE_CREAM,
     ];
 
     pub const fn new(first: Element, second: Element, result: Element) -> Self {

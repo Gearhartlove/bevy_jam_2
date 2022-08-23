@@ -17,6 +17,7 @@ impl Element {
     pub const LEGEND_DAIRY: Element = Element::new("Legend Dairy", "legend_dairy", "Utterly Delicious. Legend speaks of the cow from which this heavenly cream comes from");
     pub const SHAVED_ICE: Element = Element::new("Shaved Ice", "shaved_ice", "The most clean shaven ice you've ever seen");
     pub const UTTER_ICE_CREAM: Element = Element::new("Utter Ice Cream", "utter_ice_cream", "Utterly delicious");
+    pub const GRIFFON_EGGS: Element = Element::new("Griffon Eggs", "griffon_eggs", "Eggs bigger than you head, serves five");
 
     // note update the number when new elements are created
     #[allow(dead_code)]
