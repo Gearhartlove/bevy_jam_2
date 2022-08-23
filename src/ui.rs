@@ -5,8 +5,10 @@ use bevy::input::keyboard::KeyboardInput;
 use bevy::input::mouse::MouseButtonInput;
 use bevy::math::{vec2, Vec3Swizzles};
 use bevy::prelude::*;
+use bevy::reflect::Array;
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::Texture;
+use bevy::text::Text2dSize;
 use bevy::utils::tracing::event;
 use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier2d::prelude::Collider;
@@ -17,6 +19,7 @@ use crate::registry::Registry;
 const TAVERN_LEVEL : f32 = 10.0;
 const UI_LELVEL : f32 = 20.0;
 const SLOT_LEVEL : f32 = 30.0;
+const TEXT_LEVEL : f32 = 40.0;
 
 pub struct UiPlugin;
 
@@ -26,6 +29,7 @@ impl Plugin for UiPlugin {
             .init_resource::<DragInfo>()
             .add_event::<DropElementEvent>()
             .add_event::<UpdateSlotEvent>()
+            .add_event::<SlotEntered>()
             .add_startup_system(add_slots)
             .add_system(render_slots)
             .add_system(render_dragging)
@@ -33,7 +37,8 @@ impl Plugin for UiPlugin {
             .add_system(check_for_mixer_craft)
             .add_system(test_system)
             //.add_system(on_drop_element.after(drag_item))
-            .add_system_to_stage(CoreStage::PostUpdate, handle_slot_events);
+            .add_system_to_stage(CoreStage::PostUpdate, handle_slot_events)
+            .add_system_to_stage(CoreStage::PostUpdate, show_name);
     }
 }
 
@@ -46,6 +51,9 @@ pub struct UpdateSlotEvent(u32, Option<Element>);
 
 #[derive(Debug)]
 pub struct DropElementEvent(Vec2, Element);
+
+#[derive(Debug)]
+pub struct SlotEntered(u32);
 
 pub fn handle_slot_events (
     mut slot_query : Query<(&mut Slot, &Transform, &Sprite)>,
@@ -79,7 +87,8 @@ pub fn handle_slot_events (
 pub struct DragInfo {
     pub currently_dragging : Option<Element>,
     pub should_change_sprite : bool,
-    pub sprite_size : f32
+    pub sprite_size : f32,
+    pub last_slot : u32
 }
 
 impl Default for DragInfo {
@@ -87,7 +96,8 @@ impl Default for DragInfo {
         DragInfo {
             currently_dragging : None,
             should_change_sprite : false,
-            sprite_size : 16.0
+            sprite_size : 16.0,
+            last_slot: u32::MAX
         }
     }
 }
@@ -145,6 +155,9 @@ pub struct FurnaceSlot2;
 
 #[derive(Component)]
 pub struct SlicerSlot;
+
+#[derive(Component)]
+pub struct TitleText;
 
 #[derive(Component)]
 pub struct Slot{
@@ -271,7 +284,8 @@ fn drag_item(
     mut lines : ResMut<DebugLines>,
     game_helper : Res<GameHelper>,
     mut drag_info : ResMut<DragInfo>,
-    mut drop_element_event : EventWriter<DropElementEvent>
+    mut drop_element_event : EventWriter<DropElementEvent>,
+    mut entered_slot_event : EventWriter<SlotEntered>
 ) {
     for (mut slot, transform, sprite) in slot_query.iter_mut() {
         let rect = Slot::generate_rect(transform, sprite);
@@ -279,6 +293,11 @@ fn drag_item(
         //draw_box(&mut lines, transform.translation, width, height, Color::RED);
 
         let is_within = rect.is_within(game_helper.mouse_world_pos());
+
+        if is_within &&drag_info.last_slot != slot.index {
+            entered_slot_event.send(SlotEntered(slot.index));
+            drag_info.last_slot = slot.index
+        }
 
         if is_within && buttons.just_pressed(MouseButton::Right) && slot.element.is_some() && slot.can_change {
             slot.element = None;
@@ -310,6 +329,28 @@ pub fn on_drop_element(
     }
 }
 
+fn show_name(
+    mut slot_query : Query<&Slot>,
+    mut title : Query<(&mut Text, &mut Visibility), With<TitleText>>,
+    mut slot_entered_event : EventReader<SlotEntered>
+) {
+    let (mut text, mut visibility) = title.single_mut();
+
+    for event in slot_entered_event.iter() {
+        println!("Show name");
+        for slot in slot_query.iter_mut() {
+            if slot.index == event.0 {
+                if slot.element.is_some() {
+                    visibility.is_visible = true;
+                    text.sections.first_mut().unwrap().value = slot.element.as_ref().unwrap().name.to_string();
+                } else {
+                    visibility.is_visible = false;
+                }
+            }
+        }
+    }
+}
+
 pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn_bundle(SpriteBundle {
@@ -331,6 +372,23 @@ pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
         transform: Transform::from_xyz(0.0, 0.0, UI_LELVEL),
         ..default()
     });
+
+    let font = asset_server.load("font/pixel_font.ttf");
+    let text_style = TextStyle {
+        font,
+        font_size: 60.0,
+        color: Color::WHITE,
+    };
+
+    commands.spawn_bundle(Text2dBundle {
+        text: Text::from_section("Test", text_style),
+        transform: Transform::from_xyz(-606.0, -292.0, TEXT_LEVEL),
+        text_2d_size : Text2dSize {
+            size: Vec2::new(256.0, 128.0)
+        },
+        visibility: Visibility { is_visible: false },
+        ..default()
+    }).insert(Name::new("Item Hover Text")).insert(TitleText);
 
     let mut current_slots_taken = add_slot_array(&mut commands, -512.0, 200.0, 3, 4, 128.0);
     setup_mixer_slots(&mut commands, &mut current_slots_taken)
@@ -383,7 +441,3 @@ fn setup_mixer_slots(commands: &mut Commands, slots_taken : &mut u32) {
         .insert(Slot{element : None, can_change: true, index: slots_taken.clone() + 1})
         .insert(MixerSlot2);
 }
-
-
-
-
