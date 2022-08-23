@@ -24,7 +24,7 @@ pub enum AppState {
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::hex("323E40").unwrap()))
+        .insert_resource(ClearColor(Color::hex("183f39").unwrap()))
         .add_state(Game)
         .insert_resource(WindowDescriptor {
             width: 1280.0,
