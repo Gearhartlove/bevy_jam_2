@@ -26,7 +26,7 @@ impl Plugin for UiPlugin {
             .init_resource::<DragInfo>()
             .add_event::<DropElementEvent>()
             .add_event::<UpdateSlotEvent>()
-            .add_startup_system(add_slots)
+            .add_startup_system(setup_ui)
             .add_system(render_slots)
             .add_system(render_dragging)
             .add_system(drag_item)
@@ -310,7 +310,7 @@ pub fn on_drop_element(
     }
 }
 
-pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn_bundle(SpriteBundle {
             sprite : Sprite {
@@ -327,7 +327,7 @@ pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(Name::new("Drag Entity"));
 
     commands.spawn_bundle(SpriteBundle {
-        texture: asset_server.load("sprites/proto_kitchen_recipe.png"),
+        texture: asset_server.load("sprites/proto_kitchen_bg2.png"),
         transform: Transform::from_xyz(0.0, 0.0, UI_LELVEL),
         ..default()
     });
