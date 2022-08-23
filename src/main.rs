@@ -39,7 +39,6 @@ fn main() {
         .add_plugin(WorldInspectorPlugin::new()) // debugging window
         //.add_plugin(MixerPlugin)
         .add_startup_system(setup_camera)
-        .add_startup_system(setup_game_background)
         .run();
 }
 
@@ -47,13 +46,6 @@ fn main() {
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
-}
-
-fn setup_game_background(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn_bundle(SpriteBundle {
-        texture: asset_server.load("sprites/proto_kitchen_recipe.png"),
-        ..default()
-    });
 }
 
 #[derive(Component)]
