@@ -1,6 +1,0 @@
-{
-  "name" : "Fire Pepper",
-  "sprite" : "sprites/fire_pepper.png",
-  "desc" : "A Fire Pepper that is pepper harvested from the rim of an active volcano.",
-  "id": "fire_pepper"
-}

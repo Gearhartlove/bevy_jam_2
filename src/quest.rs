@@ -14,7 +14,6 @@ impl Plugin for QuestPlugin {
         app
             .insert_resource(quests)
             .insert_resource(current_quest)
-            .add_system_set(SystemSet::on_enter(AppState::Game).with_system(advance_current_quest))
             // .add_system_to_stage(CoreStage::PostUpdate, is_quest_complete);
         ;
     }
@@ -22,11 +21,9 @@ impl Plugin for QuestPlugin {
 
 #[derive(Debug, Clone)]
 pub struct Quest<'r> {
-    text: &'static str,
-    result: Element,
+    pub result: Element,
     reward: Option<&'r[Element]>,
     crafting_table: Option<CraftingTable>,
-    pub npc: &'static str,
 }
 
 #[derive(Debug, Clone)]
@@ -47,8 +44,6 @@ impl<'r> Quest<'r> {
             Element::GLACIER_ICE, // Result
             None,  // Reward
             Some(CraftingTable::Slicer), // Crafting Table Reward
-            "I need some glacier ice, can you get me some?",// Quest Text
-            NpcPlugin::GOBLIN_NPC, // npc
         )
     };
 
@@ -57,8 +52,6 @@ impl<'r> Quest<'r> {
             Element::SHAVED_ICE, // Result
             Some(&[Element::LEGEND_DAIRY]),  // Reward
             Some(CraftingTable::Mixer), // Crafting Table Reward
-            "I need some shaved ice. Get me some :)",// Quest Text
-            NpcPlugin::GOBLIN_NPC, // npc
         )
     };
 
@@ -67,21 +60,17 @@ impl<'r> Quest<'r> {
             Element::UTTER_ICE_CREAM, // Result
             Some(&[Element::GRIFFON_EGGS]),  // Reward
             None, // Crafting Table Reward
-            "MAKE ME ICE CREAM!",// Quest Text
-            NpcPlugin::GOBLIN_NPC, // npc
         )
     };
     // #####################################################################
     // New quest chapter
     // #####################################################################
 
-    const fn new(result: Element, reward: Option<&'r[Element]>, crafting_table: Option<CraftingTable>, text: &'static str, npc: &'static str) -> Self {
+    const fn new(result: Element, reward: Option<&'r[Element]>, crafting_table: Option<CraftingTable>) -> Self {
         Self {
             result,
             reward,
             crafting_table,
-            text,
-            npc
         }
     }
 }
@@ -93,11 +82,6 @@ fn setup_quests() -> IntoIter<Quest<'static>> {
     ll.push_back(Quest::UTTER_ICE_CREAM_QUEST);
 
     return ll.into_iter();
-}
-
-pub fn advance_current_quest(mut current_quest: ResMut<Quest<'static>>, mut quest_iter: ResMut<IntoIter<Quest<'static>>>) {
-    *current_quest = quest_iter.next().unwrap();
-    println!("{:?}", *current_quest)
 }
 
 // temporary; todo: change to brook's event name
