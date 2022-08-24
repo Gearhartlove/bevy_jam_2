@@ -337,7 +337,6 @@ fn show_name(
     let (mut text, mut visibility) = title.single_mut();
 
     for event in slot_entered_event.iter() {
-        println!("Show name");
         for slot in slot_query.iter_mut() {
             if slot.index == event.0 {
                 if slot.element.is_some() {
