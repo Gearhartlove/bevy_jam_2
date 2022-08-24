@@ -11,9 +11,11 @@ pub struct FurnaceRecipe {
 
 impl FurnaceRecipe {
     pub const GLACIER_ICE: FurnaceRecipe = FurnaceRecipe::new(Element::FROST_BOTTLE, Element::YETI_WATER, Element::GLACIER_ICE);
+    pub const TEST: FurnaceRecipe = FurnaceRecipe::new(Element::FIRE_PEPPER, Element::YETI_WATER, Element::LEGEND_DAIRY);
 
-    pub const RECIPES: [FurnaceRecipe; 1] = [
+    pub const RECIPES: [FurnaceRecipe; 2] = [
         FurnaceRecipe::GLACIER_ICE,
+        FurnaceRecipe::TEST
     ];
 
     pub const fn new(fuel: Element, object: Element, result: Element) -> Self {

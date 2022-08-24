@@ -14,7 +14,7 @@ use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier2d::prelude::Collider;
 use crate::element::Element;
 use crate::{GameHelper, MixerRecipeIden};
-use crate::registry::Registry;
+use crate::registry::{FurnaceRecipeIden, Registry};
 
 const TAVERN_LEVEL : f32 = 10.0;
 const UI_LELVEL : f32 = 20.0;
@@ -38,6 +38,7 @@ impl Plugin for UiPlugin {
             .add_system(render_dragging)
             .add_system(drag_item)
             .add_system(check_for_mixer_craft)
+            .add_system(check_for_furnace_craft)
             .add_system(test_system)
             //.add_system(on_drop_element.after(drag_item))
             .add_system_to_stage(CoreStage::PostUpdate, handle_slot_events)
@@ -278,6 +279,40 @@ fn check_for_mixer_craft(
     }
 }
 
+fn check_for_furnace_craft(
+    mut slot_1_q : Query<&mut Slot, (With<FurnaceSlot1>, Without<FurnaceSlot2>)>,
+    mut slot_2_q : Query<&mut Slot, (With<FurnaceSlot2>, Without<FurnaceSlot1>)>,
+    registy : Res<Registry>,
+    mut ui_data : ResMut<UiData>,
+    mut refresh_slots : EventWriter<RefreshSlotsEvent>,
+    mut element_crafted_event : EventWriter<ElementCraftedEvent>
+) {
+    let mut slot_2 = slot_1_q.single_mut();
+    let mut slot_1 = slot_2_q.single_mut();
+
+    if slot_1.element.is_some() && slot_2.element.is_some() {
+        let element_1 = slot_1.element.as_ref().unwrap().clone();
+        let element_2 = slot_2.element.as_ref().unwrap().clone();
+
+        let iden = FurnaceRecipeIden::new(element_1, element_2);
+
+        let recipe = registy.furnace_recipe_registry.get(&iden);
+        if recipe.is_some() {
+            let element = recipe.as_ref().unwrap().result.clone();
+            if !ui_data.known_elements.contains(&element) {
+                element_crafted_event.send(ElementCraftedEvent(element.clone()));
+                ui_data.known_elements.push(element);
+                refresh_slots.send(RefreshSlotsEvent);
+            }
+        } else {
+            //Add error responce
+        }
+
+        slot_1.element = None;
+        slot_2.element = None;
+    }
+}
+
 fn render_slots(
     mut slot : Query<(&Slot, &mut Handle<Image>, &mut Visibility)>,
     asset_server: Res<AssetServer>
@@ -412,7 +447,6 @@ fn refresh_slots (
     mut refresh_event : EventReader<RefreshSlotsEvent>
 ) {
     if !refresh_event.is_empty() {
-        println!("REFRESHING SLOTS");
         for mut slot in slot_query.iter_mut() {
             let element = ui_manager.known_elements.get(slot.index as usize);
             if let Some(element) = element {
@@ -463,7 +497,9 @@ pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
     }).insert(Name::new("Item Hover Text")).insert(TitleText);
 
     let mut current_slots_taken = add_slot_array(&mut commands, -512.0, 200.0, 3, 4, 128.0);
-    setup_mixer_slots(&mut commands, &mut current_slots_taken)
+    setup_mixer_slots(&mut commands, &mut current_slots_taken);
+    setup_furnace_slots(&mut commands, &mut current_slots_taken);
+    setup_slicer_slot(&mut commands, &mut current_slots_taken);
 }
 
 fn add_slot_array(commands: &mut Commands, x : f32, y : f32, width : u32, height : u32, slot_size : f32) -> u32{
@@ -484,7 +520,7 @@ fn add_slot_array(commands: &mut Commands, x : f32, y : f32, width : u32, height
     width * height
 }
 
-fn setup_mixer_slots(commands: &mut Commands, slots_taken : &mut u32) {
+fn setup_mixer_slots(commands: &mut Commands, mut slots_taken : &mut u32) {
     let pos_x = -64.0;
     let pos_y = 88.0;
 
@@ -514,4 +550,58 @@ fn setup_mixer_slots(commands: &mut Commands, slots_taken : &mut u32) {
         .insert(Slot{element : None, can_change: true, index: slots_taken.clone() + 1})
         .insert(MixerSlot2)
         .insert(ToolSlot);
+
+    *slots_taken += 2;
+}
+
+fn setup_furnace_slots(commands: &mut Commands, mut slots_taken : &mut u32) {
+    let pos_x = 0.0;
+    let pos_y = -88.0;
+
+    let slot_pos_1 = Vec3::new(pos_x, pos_y, SLOT_LEVEL);
+    let slot_pos_2 = Vec3::new(pos_x, pos_y - 128.0 , SLOT_LEVEL);
+
+    commands.spawn_bundle(SpriteBundle {
+        transform : Transform::from_translation(slot_pos_1),
+        sprite : Sprite {
+            custom_size: Some(Vec2::splat(128.0)),
+            ..default()
+        },
+        ..default()
+    })
+        .insert(Slot{element : None, can_change: true, index: slots_taken.clone()})
+        .insert(FurnaceSlot1)
+        .insert(ToolSlot)
+        .insert(Name::new("Furnace Slot"));
+
+    commands.spawn_bundle(SpriteBundle {
+        transform : Transform::from_translation(slot_pos_2),
+        sprite : Sprite {
+            custom_size: Some(Vec2::splat(128.0)),
+            ..default()
+        },
+        ..default()
+    })
+        .insert(Slot{element : None, can_change: true, index: slots_taken.clone() + 1})
+        .insert(FurnaceSlot2)
+        .insert(ToolSlot);
+
+    *slots_taken += 2;
+}
+
+fn setup_slicer_slot(commands: &mut Commands, mut slots_taken : &mut u32) {
+    commands.spawn_bundle(SpriteBundle {
+        transform : Transform::from_translation(Vec3::new(0.0, 264.0, SLOT_LEVEL)),
+        sprite : Sprite {
+            custom_size: Some(Vec2::splat(128.0)),
+            ..default()
+        },
+        ..default()
+    })
+        .insert(Slot{element : None, can_change: true, index: slots_taken.clone()})
+        .insert(SlicerSlot)
+        .insert(ToolSlot)
+        .insert(Name::new("Slicer Slot"));
+
+    *slots_taken += 1;
 }
