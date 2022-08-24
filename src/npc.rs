@@ -1,5 +1,7 @@
+use bevy::math::Vec2Swizzles;
 use bevy::prelude::*;
 use bevy_inspector_egui::egui::FontSelection::Style;
+use imagesize::size;
 use crate::AppState;
 use crate::element::Element;
 use crate::game::{Game, GameStatus};
@@ -21,6 +23,8 @@ pub struct Npc {
     pub kind: NpcKind,
     pub name: String,
     pub sprite: Handle<Image>,
+    pub sprite_path: String,
+    // pub color: Color,
     // pub voice: Handle<Audio>,
 }
 
@@ -31,6 +35,7 @@ impl Npc {
 #[derive(PartialEq, Eq)]
 pub enum NpcKind {
     Squee,
+    Conrad
 }
 
 //==================================================================================================
@@ -114,7 +119,7 @@ fn setup_dialogue(mut commands: Commands, asset_server: Res<AssetServer>, curren
         .insert(Name::new("NpcSprite"));
 
     // text bubble
-    let font = asset_server.load("fonts/JetBrainsMono.ttf");
+    let font = asset_server.load("fonts/pixel_font.ttf");
     // todo: change
     let text_style = TextStyle {
         font,
@@ -124,12 +129,12 @@ fn setup_dialogue(mut commands: Commands, asset_server: Res<AssetServer>, curren
     // todo: change?
     let text_alignment = TextAlignment {
         vertical: VerticalAlign::Top,
-        horizontal: HorizontalAlign::Center,
+        horizontal: HorizontalAlign::Left,
     };
 
     commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("", text_style).with_alignment(text_alignment),
-        transform: Transform::from_xyz(384., 93., 0.),
+        transform: Transform::from_xyz(206.5, 93., 0.),
         ..default()
     })
         .insert(NpcText)
@@ -140,18 +145,28 @@ fn dialogue(
     mut commands: Commands,
     mut query: Query<(Entity, &Npc, &mut Say)>,
     mut query_text: Query<&mut Text, With<NpcText>>,
-    mut query_sprite: Query<&mut Handle<Image>, With<NpcSprite>>,
+    mut query_sprite: Query<(&mut Handle<Image>, &mut Sprite),  With<NpcSprite>>,
     time: Res<Time>,
     // audio: Res<Audio>
 ) {
     if let Ok((entity, npc, mut say)) = query.get_single_mut() {
         if let Ok(mut text) = query_text.get_single_mut() {
-            if let Ok(mut sprite) = query_sprite.get_single_mut() {
+            if let Ok((mut sprite_handle, mut sprite)) = query_sprite.get_single_mut() {
                 if say.i == 0 {
-                    println!("finished");
                     say.start = time.seconds_since_startup();
-                    *sprite = npc.sprite.clone();
+                    let sprite_path = format!("assets/{}", npc.sprite_path.clone());
+                    let (width, height) = match size(sprite_path) {
+                        Ok(dim) => (dim.width, dim.height),
+                        Err(why) => panic!("Error getting dimensions: {:?}", why),
+                    };
+                    // change sprite picture
+                    *sprite_handle = npc.sprite.clone();
+                    // change sprite scaling
+                    sprite.custom_size = Some(Vec2::new(width as f32 * 8., height as f32 * 8.,));
                 }
+
+                //set text color ?
+
                 // compute the new i
                 let now = time.seconds_since_startup();
                 let mut new_i = say.compute_i(now);
@@ -179,4 +194,3 @@ fn dialogue(
         }
     }
 }
-

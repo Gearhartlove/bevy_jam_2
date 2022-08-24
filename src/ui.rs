@@ -441,12 +441,12 @@ pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(Name::new("Drag Entity"));
 
     commands.spawn_bundle(SpriteBundle {
-        texture: asset_server.load("sprites/proto_kitchen_recipe.png"),
+        texture: asset_server.load("sprites/proto_kitchen_bg2.png"),
         transform: Transform::from_xyz(0.0, 0.0, UI_LELVEL),
         ..default()
     });
 
-    let font = asset_server.load("font/pixel_font.ttf");
+    let font = asset_server.load("fonts/pixel_font.ttf");
     let text_style = TextStyle {
         font,
         font_size: 60.0,

@@ -46,7 +46,6 @@ fn main() {
         .add_plugin(WorldInspectorPlugin::new()) // debugging window
         .add_plugin(QuestPlugin)
         .add_plugin(NpcPlugin)
-        //.add_plugin(MixerPlugin)
         .add_startup_system(setup_camera)
         .run();
 }

@@ -44,6 +44,7 @@ impl Game {
         let mut i = 0;
         match self.npc {
             NpcKind::Squee => { i = 0; }
+            NpcKind::Conrad => { i = 1; }
         }
         self.npcs[i]
     }
@@ -57,13 +58,28 @@ fn create_npcs(mut commands: Commands, asset_server: Res<AssetServer>, mut game:
                 kind: NpcKind::Squee,
                 name: "Squee the Thumbless".to_string(),
                 sprite: asset_server.load("sprites/goblin.png"),
+                sprite_path: "sprites/goblin.png".to_string()
                 // voice: asset_server.load("voice/goblin_voice.png"),
             }
         )
         .insert(Name::new("Squee Entity"))
         .id();
 
+    let sir_conrad = commands
+        .spawn()
+        .insert(
+            Npc {
+                kind: NpcKind::Conrad,
+                name: "Sir Conrad".to_string(),
+                sprite: asset_server.load("sprites/knight.png"),
+                sprite_path: "sprites/knight.png".to_string()
+            }
+        )
+        .insert(Name::new("Sir Conrad Entity"))
+        .id();
+
     game.npcs.push(squee_entity);
+    game.npcs.push(sir_conrad);
 }
 
 pub fn give_next_quest(mut commands: Commands, mut game: ResMut<Game>, mut quest_iter: ResMut<IntoIter<Quest<'static>>>, mut current_quest: ResMut<Quest<'static>>) {
@@ -75,12 +91,18 @@ pub fn give_next_quest(mut commands: Commands, mut game: ResMut<Game>, mut quest
                 if current_quest.result == Element::GLACIER_ICE {
                     commands.entity(squee).insert(Say::new(
                         "Try using the furnace to make some \n\
-                    will ya? I heard ice in the oven makes \n \
+                    will ya? I heard ice in the oven makes \n\
                     it real cold."
+                    ));
+                } else if current_quest.result == Element::SHAVED_ICE {
+                    commands.entity(squee).insert(Say::new(
+                        "I need Ice Ice ICE! Try cutting some of that \n\
+                        glacier, will ya?"
                     ));
                 } else if current_quest.result == Element::UTTER_ICE_CREAM {
                     commands.entity(squee).insert(Say::new(
-                        "Squeeeee neeeeeds ice creeeeem! \n ... \n please."
+                        "Squeeeee neeeeeds ice creeeeem! \n... \n\
+                        Try mixing some of those ingredients up!."
                     ));
                 } else {
                     commands.entity(squee).insert(Say::new(
@@ -89,7 +111,18 @@ pub fn give_next_quest(mut commands: Commands, mut game: ResMut<Game>, mut quest
                 }
                 // add more quests below ...
             }
-            _ => {}
+            NpcKind::Conrad => {
+                let conrad = game.get_npc();
+                if current_quest.result == Element::GLACIER_ICE {
+                    commands.entity(conrad).insert(Say::new(
+                        "The king needs ice, fast!"
+                    ));
+                } else {
+                    commands.entity(conrad).insert(Say::new(
+                        "I don't have a response for the current quest."
+                    ));
+                }
+            }
         }
 
         // change game status

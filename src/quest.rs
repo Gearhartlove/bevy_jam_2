@@ -58,7 +58,7 @@ impl<'r> Quest<'r> {
     pub const UTTER_ICE_CREAM_QUEST: Quest<'r> = {
         Quest::new(
             Element::UTTER_ICE_CREAM, // Result
-            Some(&[Element::GRIFFON_EGGS]),  // Reward
+            Some(&[Element::GRIFFON_EGGS, Element::FIRE_PEPPER]),  // Reward
             None, // Crafting Table Reward
         )
     };
@@ -77,7 +77,7 @@ impl<'r> Quest<'r> {
 
 fn setup_quests() -> IntoIter<Quest<'static>> {
     let mut ll: LinkedList<Quest> = LinkedList::new();
-    ll.push_back(Quest::GLACIER_ICE_QUEST); // already started in the 'build' function
+    ll.push_back(Quest::GLACIER_ICE_QUEST);
     ll.push_back(Quest::SHAVED_ICE_QUEST);
     ll.push_back(Quest::UTTER_ICE_CREAM_QUEST);
 
@@ -87,7 +87,7 @@ fn setup_quests() -> IntoIter<Quest<'static>> {
 // temporary; todo: change to brook's event name
 struct CraftingEvent;
 
-fn is_quest_complete(mut crafting_events: ResMut<Events<CraftingEvent>>) -> bool {
-    // return self.result == *created_ingredient;
-    unimplemented!()
-}
+// fn is_quest_complete(mut crafting_events: ResMut<Events<CraftingEvent>>) -> bool {
+//     // return self.result == *created_ingredient;
+//     unimplemented!()
+// }
