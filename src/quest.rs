@@ -3,31 +3,30 @@ use std::collections::LinkedList;
 use bevy::prelude::*;
 use crate::AppState;
 use crate::element::Element;
+use crate::npc::NpcPlugin;
 
 pub struct QuestPlugin;
 
 impl Plugin for QuestPlugin {
     fn build(&self, app: &mut App) {
         let quests = setup_quests();
-        let current_quest: Option<Quest> = None;
+        let current_quest: Quest = Quest::GLACIER_ICE_QUEST;
         app
             .insert_resource(quests)
             .insert_resource(current_quest)
-            .add_system_set(SystemSet::on_enter(AppState::Game).with_system(advance_current_quest))
             // .add_system_to_stage(CoreStage::PostUpdate, is_quest_complete);
         ;
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Quest<'r> {
-    text: &'static str,
-    result: Element,
+    pub result: Element,
     reward: Option<&'r[Element]>,
     crafting_table: Option<CraftingTable>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum CraftingTable {
     Furnace,
     Mixer,
@@ -45,7 +44,6 @@ impl<'r> Quest<'r> {
             Element::GLACIER_ICE, // Result
             None,  // Reward
             Some(CraftingTable::Slicer), // Crafting Table Reward
-            "I need some glacier ice, can you get me some?",// Quest Text
         )
     };
 
@@ -54,7 +52,6 @@ impl<'r> Quest<'r> {
             Element::SHAVED_ICE, // Result
             Some(&[Element::LEGEND_DAIRY]),  // Reward
             Some(CraftingTable::Mixer), // Crafting Table Reward
-            "I need some shaved ice. Get me some :)",// Quest Text
         )
     };
 
@@ -63,34 +60,28 @@ impl<'r> Quest<'r> {
             Element::UTTER_ICE_CREAM, // Result
             Some(&[Element::GRIFFON_EGGS]),  // Reward
             None, // Crafting Table Reward
-            "MAKE ME ICE CREAM!",// Quest Text
         )
     };
     // #####################################################################
     // New quest chapter
     // #####################################################################
 
-    const fn new(result: Element, reward: Option<&'r[Element]>, crafting_table: Option<CraftingTable>, text: &'static str) -> Self {
+    const fn new(result: Element, reward: Option<&'r[Element]>, crafting_table: Option<CraftingTable>) -> Self {
         Self {
             result,
             reward,
             crafting_table,
-            text,
         }
     }
 }
 
 fn setup_quests() -> IntoIter<Quest<'static>> {
     let mut ll: LinkedList<Quest> = LinkedList::new();
-    ll.push_back(Quest::GLACIER_ICE_QUEST);
+    ll.push_back(Quest::GLACIER_ICE_QUEST); // already started in the 'build' function
     ll.push_back(Quest::SHAVED_ICE_QUEST);
     ll.push_back(Quest::UTTER_ICE_CREAM_QUEST);
-    return ll.into_iter();
-}
 
-pub fn advance_current_quest(mut current_quest: ResMut<Option<Quest<'static>>>, mut quest_iter: ResMut<IntoIter<Quest<'static>>>) {
-    *current_quest = quest_iter.next();
-    println!("{:?}", *current_quest)
+    return ll.into_iter();
 }
 
 // temporary; todo: change to brook's event name
