@@ -26,10 +26,13 @@ pub struct UiPlugin;
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app
-            .init_resource::<DragInfo>()
+            .init_resource::<UiData>()
             .add_event::<DropElementEvent>()
             .add_event::<UpdateSlotEvent>()
-            .add_event::<SlotEntered>()
+            .add_event::<SlotEnteredEvent>()
+            .add_event::<SlotLeftEvent>()
+            .add_event::<RefreshSlotsEvent>()
+            .add_event::<ElementCraftedEvent>()
             .add_startup_system(add_slots)
             .add_system(render_slots)
             .add_system(render_dragging)
@@ -38,7 +41,10 @@ impl Plugin for UiPlugin {
             .add_system(test_system)
             //.add_system(on_drop_element.after(drag_item))
             .add_system_to_stage(CoreStage::PostUpdate, handle_slot_events)
-            .add_system_to_stage(CoreStage::PostUpdate, show_name);
+            .add_system_to_stage(CoreStage::PostUpdate, hide_name)
+            .add_system_to_stage(CoreStage::PostUpdate, show_name.after(hide_name))
+            .add_system_to_stage(CoreStage::Last, refresh_slots)
+        ;
     }
 }
 
@@ -53,7 +59,16 @@ pub struct UpdateSlotEvent(u32, Option<Element>);
 pub struct DropElementEvent(Vec2, Element);
 
 #[derive(Debug)]
-pub struct SlotEntered(u32);
+pub struct SlotEnteredEvent(u32);
+
+#[derive(Debug)]
+pub struct SlotLeftEvent(u32);
+
+#[derive(Debug)]
+pub struct RefreshSlotsEvent;
+
+#[derive(Debug)]
+pub struct ElementCraftedEvent(Element);
 
 pub fn handle_slot_events (
     mut slot_query : Query<(&mut Slot, &Transform, &Sprite)>,
@@ -84,20 +99,22 @@ pub fn handle_slot_events (
 //                          DragInfo Resource
 //==================================================================================================
 
-pub struct DragInfo {
+pub struct UiData {
     pub currently_dragging : Option<Element>,
     pub should_change_sprite : bool,
     pub sprite_size : f32,
-    pub last_slot : u32
+    pub last_slot : u32,
+    pub known_elements : Vec<Element>
 }
 
-impl Default for DragInfo {
+impl Default for UiData {
     fn default() -> Self {
-        DragInfo {
+        UiData {
             currently_dragging : None,
             should_change_sprite : false,
             sprite_size : 16.0,
-            last_slot: u32::MAX
+            last_slot: u32::MAX,
+            known_elements : Vec::new()
         }
     }
 }
@@ -160,7 +177,10 @@ pub struct SlicerSlot;
 pub struct TitleText;
 
 #[derive(Component)]
-pub struct Slot{
+pub struct ToolSlot;
+
+#[derive(Component)]
+pub struct Slot {
     pub element : Option<Element>,
     pub index : u32,
     pub can_change : bool
@@ -205,13 +225,22 @@ impl Slot {
     }
 }
 
+//==================================================================================================
+//                          Systems
+//==================================================================================================
+
 fn test_system (
     mut slot_update : EventWriter<UpdateSlotEvent>,
-    keys: Res<Input<KeyCode>>
+    keys: Res<Input<KeyCode>>,
+    mut ui_data : ResMut<UiData>,
+    mut slot_refresh : EventWriter<RefreshSlotsEvent>
 ) {
     if keys.just_pressed(KeyCode::A) {
-        slot_update.send(UpdateSlotEvent(0, Some(Element::FIRE_PEPPER)));
-        slot_update.send(UpdateSlotEvent(1, Some(Element::YETI_WATER)));
+        ui_data.known_elements.push(Element::FIRE_PEPPER.clone());
+        ui_data.known_elements.push(Element::YETI_WATER.clone());
+        //slot_update.send(UpdateSlotEvent(0, Some(Element::FIRE_PEPPER)));
+        //slot_update.send(UpdateSlotEvent(1, Some(Element::YETI_WATER)));
+        slot_refresh.send(RefreshSlotsEvent)
     }
 }
 
@@ -219,7 +248,10 @@ fn check_for_mixer_craft(
     mut slot_1_q : Query<&mut Slot, (With<MixerSlot1>, Without<MixerSlot2>)>,
     mut slot_2_q : Query<&mut Slot, (With<MixerSlot2>, Without<MixerSlot1>)>,
     registy : Res<Registry>,
-    mut slot_update : EventWriter<UpdateSlotEvent>
+    mut slot_update : EventWriter<UpdateSlotEvent>,
+    mut ui_data : ResMut<UiData>,
+    mut refresh_slots : EventWriter<RefreshSlotsEvent>,
+    mut element_crafted_event : EventWriter<ElementCraftedEvent>
 ) {
     let mut slot_1 = slot_1_q.single_mut();
     let mut slot_2 = slot_2_q.single_mut();
@@ -232,7 +264,12 @@ fn check_for_mixer_craft(
 
         let recipe = registy.mixer_recipe_registry.get(&iden);
         if recipe.is_some() {
-            slot_update.send(UpdateSlotEvent(10, Some(recipe.as_ref().unwrap().result.clone())))
+            let element = recipe.as_ref().unwrap().result.clone();
+            if !ui_data.known_elements.contains(&element) {
+                element_crafted_event.send(ElementCraftedEvent(element.clone()));
+                ui_data.known_elements.push(element);
+                refresh_slots.send(RefreshSlotsEvent);
+            }
         } else {
 
         }
@@ -259,7 +296,7 @@ fn render_slots(
 
 fn render_dragging (
     mut drag_entity : Query<(&mut Transform, &mut Handle<Image>, &mut Visibility), With<DragEntity>>,
-    mut drag_info : ResMut<DragInfo>,
+    mut drag_info : ResMut<UiData>,
     game_helper : Res<GameHelper>,
     asset_server: Res<AssetServer>
 ) {
@@ -283,19 +320,26 @@ fn drag_item(
     buttons: Res<Input<MouseButton>>,
     mut lines : ResMut<DebugLines>,
     game_helper : Res<GameHelper>,
-    mut drag_info : ResMut<DragInfo>,
+    mut drag_info : ResMut<UiData>,
     mut drop_element_event : EventWriter<DropElementEvent>,
-    mut entered_slot_event : EventWriter<SlotEntered>
+    mut entered_slot_event : EventWriter<SlotEnteredEvent>,
+    mut left_slot_event : EventWriter<SlotLeftEvent>,
 ) {
+    let mut is_in_slots = false;
+
     for (mut slot, transform, sprite) in slot_query.iter_mut() {
         let rect = Slot::generate_rect(transform, sprite);
         rect.draw_rect(&mut lines, Color::RED);
         //draw_box(&mut lines, transform.translation, width, height, Color::RED);
 
         let is_within = rect.is_within(game_helper.mouse_world_pos());
+        if is_within {
+            is_in_slots = true;
+        }
 
-        if is_within &&drag_info.last_slot != slot.index {
-            entered_slot_event.send(SlotEntered(slot.index));
+        if is_within && drag_info.last_slot != slot.index {
+            left_slot_event.send(SlotLeftEvent(drag_info.last_slot));
+            entered_slot_event.send(SlotEnteredEvent(slot.index));
             drag_info.last_slot = slot.index
         }
 
@@ -312,6 +356,11 @@ fn drag_item(
             drop_element_event.send(DropElementEvent(game_helper.mouse_world_pos(),drag_info.currently_dragging.as_ref().unwrap().clone()));
             drag_info.currently_dragging = None;
         }
+    }
+
+    if !is_in_slots && drag_info.last_slot != u32::MAX {
+        left_slot_event.send(SlotLeftEvent(drag_info.last_slot));
+        drag_info.last_slot = u32::MAX;
     }
 }
 
@@ -332,21 +381,46 @@ pub fn on_drop_element(
 fn show_name(
     mut slot_query : Query<&Slot>,
     mut title : Query<(&mut Text, &mut Visibility), With<TitleText>>,
-    mut slot_entered_event : EventReader<SlotEntered>
+    mut slot_entered_event : EventReader<SlotEnteredEvent>
 ) {
     let (mut text, mut visibility) = title.single_mut();
 
     for event in slot_entered_event.iter() {
         for slot in slot_query.iter_mut() {
-            if slot.index == event.0 {
-                if slot.element.is_some() {
-                    visibility.is_visible = true;
-                    text.sections.first_mut().unwrap().value = slot.element.as_ref().unwrap().name.to_string();
-                } else {
-                    visibility.is_visible = false;
+            if slot.index == event.0 && slot.element.is_some() {
+                visibility.is_visible = true;
+                if let Some(slot) = &slot.element {
+                    text.sections.first_mut().unwrap().value = slot.name.to_string();
                 }
             }
         }
+    }
+}
+
+fn hide_name (
+    mut title : Query<&mut Visibility, With<TitleText>>,
+    mut slot_left_event : EventReader<SlotLeftEvent>
+) {
+    let mut title = title.single_mut();
+    for event in slot_left_event.iter() {
+        title.is_visible = false;
+    }
+}
+
+fn refresh_slots (
+    mut slot_query : Query<&mut Slot, Without<ToolSlot>>,
+    ui_manager : Res<UiData>,
+    mut refresh_event : EventReader<RefreshSlotsEvent>
+) {
+    if !refresh_event.is_empty() {
+        println!("REFRESHING SLOTS");
+        for mut slot in slot_query.iter_mut() {
+            let element = ui_manager.known_elements.get(slot.index as usize);
+            if let Some(element) = element {
+                slot.element = Some(element.to_owned());
+            }
+        }
+        refresh_event.clear()
     }
 }
 
@@ -427,7 +501,8 @@ fn setup_mixer_slots(commands: &mut Commands, slots_taken : &mut u32) {
         ..default()
     })
         .insert(Slot{element : None, can_change: true, index: slots_taken.clone()})
-        .insert(MixerSlot1);
+        .insert(MixerSlot1)
+        .insert(ToolSlot);
 
     commands.spawn_bundle(SpriteBundle {
         transform : Transform::from_translation(slot_pos_2),
@@ -438,5 +513,6 @@ fn setup_mixer_slots(commands: &mut Commands, slots_taken : &mut u32) {
         ..default()
     })
         .insert(Slot{element : None, can_change: true, index: slots_taken.clone() + 1})
-        .insert(MixerSlot2);
+        .insert(MixerSlot2)
+        .insert(ToolSlot);
 }
