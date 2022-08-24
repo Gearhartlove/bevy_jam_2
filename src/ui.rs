@@ -72,7 +72,7 @@ pub struct SlotLeftEvent(u32);
 pub struct RefreshSlotsEvent;
 
 #[derive(Debug)]
-pub struct ElementCraftedEvent(Element);
+pub struct ElementCraftedEvent(pub Element);
 
 #[derive(Debug)]
 pub struct CraftFailedEvent(CraftType);

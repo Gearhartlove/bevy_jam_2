@@ -10,7 +10,7 @@ pub struct QuestPlugin;
 impl Plugin for QuestPlugin {
     fn build(&self, app: &mut App) {
         let quests = setup_quests();
-        let current_quest: Quest = Quest::GLACIER_ICE_QUEST;
+        let current_quest: Quest = Quest::DEBUG_QUEST;
         app
             .insert_resource(quests)
             .insert_resource(current_quest)
@@ -38,6 +38,14 @@ impl<'r> Quest<'r> {
     // New quest chapter
     // #####################################################################
     // Note default unlocked ingredients: Frost Bottle, Yeti Water
+
+    pub const DEBUG_QUEST: Quest<'r> = {
+        Quest::new(
+            Element::LEGEND_DAIRY, // Result
+            None,  // Reward
+            None, // Crafting Table Reward
+        )
+    };
 
     pub const GLACIER_ICE_QUEST: Quest<'r> = {
         Quest::new(
@@ -77,6 +85,7 @@ impl<'r> Quest<'r> {
 
 fn setup_quests() -> IntoIter<Quest<'static>> {
     let mut ll: LinkedList<Quest> = LinkedList::new();
+    ll.push_back(Quest::DEBUG_QUEST);
     ll.push_back(Quest::GLACIER_ICE_QUEST);
     ll.push_back(Quest::SHAVED_ICE_QUEST);
     ll.push_back(Quest::UTTER_ICE_CREAM_QUEST);
