@@ -124,12 +124,12 @@ fn setup_dialogue(mut commands: Commands, asset_server: Res<AssetServer>, curren
     // todo: change?
     let text_alignment = TextAlignment {
         vertical: VerticalAlign::Top,
-        horizontal: HorizontalAlign::Left,
+        horizontal: HorizontalAlign::Center,
     };
 
     commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("", text_style).with_alignment(text_alignment),
-        transform: Transform::from_xyz(384., 0., 0.),
+        transform: Transform::from_xyz(384., 93., 0.),
         ..default()
     })
         .insert(NpcText)
@@ -148,33 +148,35 @@ fn dialogue(
         if let Ok(mut text) = query_text.get_single_mut() {
             if let Ok(mut sprite) = query_sprite.get_single_mut() {
                 if say.i == 0 {
+                    println!("finished");
                     say.start = time.seconds_since_startup();
                     *sprite = npc.sprite.clone();
-                    // compute the new i
-                    let now = time.seconds_since_startup();
-                    let mut new_i = say.compute_i(now);
-                    // if we finished
-                    if say.i >= say.text.len() {
-                        // and 1 sec has passed
-                        if now - say.duration - say.start > 1. {
-                            commands.entity(entity).remove::<Say>();
-                        }
+                }
+                // compute the new i
+                let now = time.seconds_since_startup();
+                let mut new_i = say.compute_i(now);
+                // if we finished
+                if say.i >= say.text.len() {
+                    // and 1 sec has passed
+                    if now - say.duration - say.start > 1. {
+                        commands.entity(entity).remove::<Say>();
                     }
-                    // if not finished
-                    else if new_i != say.i {
-                        // there's new characters to say
-                        new_i = new_i.min(say.text.len());
-                        // magic line that updates the code by making the old text box equal to the new
-                        // sliced text box
-                        text.sections[0].value = say.text[0..new_i].to_string();
-                        // if i..new_i is not only spaces, produce a sound
-                        // if say.text[say.i..new_i].trim().len() > 0 {
-                        // audio.play(character.voice.clone());
-                        // }
-                        say.i = new_i;
-                    }
+                }
+                // if not finished
+                else if new_i != say.i {
+                    // there's new characters to say
+                    new_i = new_i.min(say.text.len());
+                    // magic line that updates the code by making the old text box equal to the new
+                    // sliced text box
+                    text.sections[0].value = say.text[0..new_i].to_string();
+                    // if i..new_i is not only spaces, produce a sound
+                    // if say.text[say.i..new_i].trim().len() > 0 {
+                    // audio.play(character.voice.clone());
+                    // }
+                    say.i = new_i;
                 }
             }
         }
     }
 }
+

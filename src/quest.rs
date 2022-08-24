@@ -77,7 +77,7 @@ impl<'r> Quest<'r> {
 
 fn setup_quests() -> IntoIter<Quest<'static>> {
     let mut ll: LinkedList<Quest> = LinkedList::new();
-    //ll.push_back(Quest::GLACIER_ICE_QUEST); // already started in the 'build' function
+    ll.push_back(Quest::GLACIER_ICE_QUEST); // already started in the 'build' function
     ll.push_back(Quest::SHAVED_ICE_QUEST);
     ll.push_back(Quest::UTTER_ICE_CREAM_QUEST);
 

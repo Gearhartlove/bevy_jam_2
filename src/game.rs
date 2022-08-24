@@ -11,7 +11,7 @@ impl Plugin for GamePlugin {
         app
             .init_resource::<Game>()
             .add_startup_system(create_npcs)
-            .add_startup_system(give_next_quest);
+            .add_system(give_next_quest);
     }
 }
 
@@ -43,7 +43,7 @@ impl Game {
     pub fn get_npc(&self) -> Entity {
         let mut i = 0;
         match self.npc {
-            NpcKind::Squee => {i = 0;}
+            NpcKind::Squee => { i = 0; }
         }
         self.npcs[i]
     }
@@ -70,10 +70,15 @@ pub fn give_next_quest(mut commands: Commands, mut game: ResMut<Game>, mut quest
     if game.status == GameStatus::QuestComplete {
         match game.npc {
             NpcKind::Squee => {
-                println!("true");
                 let squee = game.get_npc();
                 // respond differently depending on the quest
-                if current_quest.result == Element::UTTER_ICE_CREAM {
+                if current_quest.result == Element::GLACIER_ICE {
+                    commands.entity(squee).insert(Say::new(
+                        "Try using the furnace to make some \n\
+                    will ya? I heard ice in the oven makes \n \
+                    it real cold."
+                    ));
+                } else if current_quest.result == Element::UTTER_ICE_CREAM {
                     commands.entity(squee).insert(Say::new(
                         "Squeeeee neeeeeds ice creeeeem! \n ... \n please."
                     ));
@@ -88,9 +93,10 @@ pub fn give_next_quest(mut commands: Commands, mut game: ResMut<Game>, mut quest
         }
 
         // change game status
-        game.status == GameStatus::QuestInProgress;
+        game.status = GameStatus::QuestInProgress;
 
         // update next quest
+        println!("NOTE: quest updating");
         *current_quest = quest_iter.next().unwrap();
         println!("{:?}", *current_quest)
     }
