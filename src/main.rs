@@ -50,8 +50,6 @@ fn main() {
         .run();
 }
 
-
-
 fn setup_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
 }

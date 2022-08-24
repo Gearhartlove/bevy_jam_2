@@ -68,7 +68,7 @@ pub struct SlotLeftEvent(u32);
 pub struct RefreshSlotsEvent;
 
 #[derive(Debug)]
-pub struct ElementCraftedEvent(Element);
+pub struct ElementCraftedEvent(pub Element);
 
 pub fn handle_slot_events (
     mut slot_query : Query<(&mut Slot, &Transform, &Sprite)>,
