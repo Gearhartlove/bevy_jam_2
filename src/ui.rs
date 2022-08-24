@@ -248,7 +248,6 @@ fn check_for_mixer_craft(
     mut slot_1_q : Query<&mut Slot, (With<MixerSlot1>, Without<MixerSlot2>)>,
     mut slot_2_q : Query<&mut Slot, (With<MixerSlot2>, Without<MixerSlot1>)>,
     registy : Res<Registry>,
-    mut slot_update : EventWriter<UpdateSlotEvent>,
     mut ui_data : ResMut<UiData>,
     mut refresh_slots : EventWriter<RefreshSlotsEvent>,
     mut element_crafted_event : EventWriter<ElementCraftedEvent>
