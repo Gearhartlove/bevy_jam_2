@@ -32,7 +32,7 @@ impl Npc {
     pub const GOBLIN_NPC: &'static str = "sprites/goblin.png";
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone)]
 pub enum NpcKind {
     Squee,
     Conrad
@@ -153,15 +153,24 @@ fn dialogue(
             if let Ok((mut sprite_handle, mut sprite)) = query_sprite.get_single_mut() {
                 if say.i == 0 {
                     say.start = time.seconds_since_startup();
-                    let sprite_path = format!("assets/{}", npc.sprite_path.clone());
-                    let (width, height) = match size(sprite_path) {
-                        Ok(dim) => (dim.width, dim.height),
-                        Err(why) => panic!("Error getting dimensions: {:?}", why),
-                    };
                     // change sprite picture
                     *sprite_handle = npc.sprite.clone();
                     // change sprite scaling
-                    sprite.custom_size = Some(Vec2::new(width as f32 * 8., height as f32 * 8.,));
+                    let change_sprite_size = |width: f32, height: f32, mut sprite: &mut Sprite| {
+                        sprite.custom_size = Some(Vec2::new(width * 8., height * 8.,));
+                    };
+
+                    // match on the npc name
+                    match npc.kind {
+                        NpcKind::Squee => {
+                            change_sprite_size(16., 16., &mut sprite);
+                        }
+                        NpcKind::Conrad => {
+                            change_sprite_size(16., 32., &mut sprite);
+                            println!("conrad");
+                        }
+                    }
+
                 }
 
                 //set text color ?
