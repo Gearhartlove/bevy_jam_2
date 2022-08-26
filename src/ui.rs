@@ -17,9 +17,10 @@ use crate::{GameHelper, MixerRecipeIden};
 use crate::registry::{FurnaceRecipeIden, Registry};
 
 const TAVERN_LEVEL : f32 = 10.0;
-const UI_LELVEL : f32 = 20.0;
+const UI_LEVEL: f32 = 20.0;
 const SLOT_LEVEL : f32 = 30.0;
 const TEXT_LEVEL : f32 = 40.0;
+const TOP_LEVEL : f32 = 50.0;
 
 pub struct UiPlugin;
 
@@ -537,7 +538,7 @@ pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     commands.spawn_bundle(SpriteBundle {
         texture: asset_server.load("sprites/proto_kitchen_bg2.png"),
-        transform: Transform::from_xyz(0.0, 0.0, UI_LELVEL),
+        transform: Transform::from_xyz(0.0, 0.0, UI_LEVEL),
         ..default()
     });
 
@@ -563,7 +564,7 @@ pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
     setup_furnace_slots(&mut commands, &mut current_slots_taken);
     setup_slicer_slot(&mut commands, &mut current_slots_taken);
 
-    crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png", SpriteBundle {
+    crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png",45, 28, SpriteBundle {
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..default()
     });

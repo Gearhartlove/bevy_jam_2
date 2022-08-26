@@ -1,5 +1,6 @@
 use bevy::ecs::system::EntityCommands;
 use bevy::prelude::*;
+use bevy::reflect::GetPath;
 use bevy::render::camera::RenderTarget;
 use imagesize::size;
 
@@ -52,17 +53,8 @@ fn update_mouse_world_pos(
 
 const DEFAULT_SPRITE_SCALING: f32 = 8.0;
 
-pub fn add_scaled_pixel_asset<'w, 's, 'a>(commands : &'a mut Commands<'w, 's>, asset_server: &Res<AssetServer>, path : &str, mut bundle : SpriteBundle) -> EntityCommands<'w, 's, 'a> {
-    let size = size(path);
-
-    if let Ok(size) = size {
-        bundle.sprite.custom_size = Some(Vec2::new(size.width as f32 * DEFAULT_SPRITE_SCALING, size.height as f32 * DEFAULT_SPRITE_SCALING));
+pub fn add_scaled_pixel_asset<'w, 's, 'a>(commands : &'a mut Commands<'w, 's>, asset_server: &Res<AssetServer>, path : &str, width : u32, height : u32, mut bundle : SpriteBundle) -> EntityCommands<'w, 's, 'a> {
+        bundle.sprite.custom_size = Some(Vec2::new(width as f32 * DEFAULT_SPRITE_SCALING, height as f32 * DEFAULT_SPRITE_SCALING));
         bundle.texture = asset_server.load(path);
-
         commands.spawn_bundle(bundle)
-    } else {
-        bundle.texture = asset_server.load(path);
-
-        commands.spawn_bundle(bundle)
-    }
 }
