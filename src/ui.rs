@@ -180,6 +180,7 @@ fn on_page_up (
     mut ui_data : ResMut<UiData>
 ) {
     if ui_data.can_move_up() {
+        ui_data.current_page -= 1;
 
     }
 }
@@ -380,6 +381,16 @@ fn test_system (
 
     if keys.just_pressed(KeyCode::S) {
         load_slicer.send(LoadSlicerEvent)
+    }
+
+    if keys.just_pressed(KeyCode::Down) {
+        ui_data.current_page += 1;
+        slot_refresh.send(RefreshSlotsEvent);
+    }
+
+    if keys.just_pressed(KeyCode::Up) {
+        ui_data.current_page -= 1;
+        slot_refresh.send(RefreshSlotsEvent);
     }
 }
 
@@ -642,9 +653,13 @@ fn refresh_slots (
 ) {
     if !refresh_event.is_empty() {
         for mut slot in slot_query.iter_mut() {
-            let element = ui_manager.known_elements.get(slot.index as usize);
+            let index = slot.index + ui_manager.current_page * 12;
+            println!("Current Page {}", ui_manager.current_page);
+            let element = ui_manager.known_elements.get(index as usize);
             if let Some(element) = element {
                 slot.element = Some(element.to_owned());
+            } else {
+                slot.element = None;
             }
         }
         refresh_event.clear()
@@ -708,7 +723,12 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
     crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/page_down.png", 9, 9, SpriteBundle{
         transform: Transform::from_xyz(-188.0, -284.0, TOP_LEVEL),
         ..default()
-    }).insert(Name::new("Page Down"));
+    }).insert(Name::new("Page Down")).insert(PageDown);
+
+    crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/page_up.png", 9, 9, SpriteBundle{
+        transform: Transform::from_xyz(-188.0, 300.0, TOP_LEVEL),
+        ..default()
+    }).insert(Name::new("Page Up")).insert(PageUp);
 }
 
 fn add_slot_array(commands: &mut Commands, x : f32, y : f32, width : u32, height : u32, slot_size : f32) -> u32{
