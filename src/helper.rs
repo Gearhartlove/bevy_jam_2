@@ -1,5 +1,7 @@
+use bevy::ecs::system::EntityCommands;
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
+use imagesize::size;
 
 pub struct HelperPlugin;
 
@@ -45,5 +47,22 @@ fn update_mouse_world_pos(
         let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix().inverse();
         let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
         game_info.mouse_world_pos = world_pos.truncate();
+    }
+}
+
+const DEFAULT_SPRITE_SCALING: f32 = 8.0;
+
+pub fn add_scaled_pixel_asset(commands : &mut Commands, asset_server: &Res<AssetServer>, path : &str, mut bundle : SpriteBundle) -> EntityCommands {
+    let size = size(path);
+
+    if let Ok(size) = size {
+        bundle.sprite.custom_size = Some(Vec2::new(size.width as f32 * DEFAULT_SPRITE_SCALING, size.height as f32 * DEFAULT_SPRITE_SCALING));
+        bundle.texture = asset_server.load(path);
+
+        commands.spawn_bundle(bundle)
+    } else {
+        bundle.texture = asset_server.load(path);
+
+        commands.spawn_bundle(bundle)
     }
 }

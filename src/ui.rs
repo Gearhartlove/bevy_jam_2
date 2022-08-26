@@ -35,6 +35,7 @@ impl Plugin for UiPlugin {
             .add_event::<ElementCraftedEvent>()
             .add_event::<CraftFailedEvent>()
             .add_event::<CraftRepeatedEvent>()
+            .add_event::<ElementInfoEvent>()
             .add_startup_system(add_slots)
             .add_system(render_slots)
             .add_system(render_dragging)
@@ -79,6 +80,9 @@ pub struct CraftFailedEvent(CraftType);
 
 #[derive(Debug)]
 pub struct CraftRepeatedEvent(CraftType);
+
+#[derive(Debug)]
+pub struct ElementInfoEvent(Element);
 
 #[derive(Debug)]
 pub enum CraftType {
@@ -407,6 +411,7 @@ fn drag_item(
     mut drop_element_event : EventWriter<DropElementEvent>,
     mut entered_slot_event : EventWriter<SlotEnteredEvent>,
     mut left_slot_event : EventWriter<SlotLeftEvent>,
+    mut element_info_event : EventWriter<ElementInfoEvent>
 ) {
     let mut is_in_slots = false;
 
@@ -428,6 +433,10 @@ fn drag_item(
 
         if is_within && buttons.just_pressed(MouseButton::Right) && slot.element.is_some() && slot.can_change {
             slot.element = None;
+        }
+
+        if is_within && buttons.just_pressed(MouseButton::Right) && slot.element.is_some() && !slot.can_change {
+            element_info_event.send(ElementInfoEvent(slot.element.as_ref().unwrap().clone()));
         }
 
         if is_within && buttons.just_pressed(MouseButton::Left) && drag_info.currently_dragging.is_none() && slot.element.is_some() && !slot.can_change {
@@ -553,6 +562,11 @@ pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
     setup_mixer_slots(&mut commands, &mut current_slots_taken);
     setup_furnace_slots(&mut commands, &mut current_slots_taken);
     setup_slicer_slot(&mut commands, &mut current_slots_taken);
+
+    crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png", SpriteBundle {
+        transform: Transform::from_xyz(0.0, 0.0, 0.0),
+        ..default()
+    });
 }
 
 fn add_slot_array(commands: &mut Commands, x : f32, y : f32, width : u32, height : u32, slot_size : f32) -> u32{
