@@ -82,7 +82,7 @@ pub struct CraftFailedEvent(CraftType);
 pub struct CraftRepeatedEvent(CraftType);
 
 #[derive(Debug)]
-pub struct ElementInfoEvent(Element);
+pub struct ElementInfoEvent(pub Element);
 
 #[derive(Debug)]
 pub enum CraftType {

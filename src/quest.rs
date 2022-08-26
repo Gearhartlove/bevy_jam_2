@@ -95,8 +95,3 @@ fn setup_quests() -> IntoIter<Quest<'static>> {
 
 // temporary; todo: change to brook's event name
 struct CraftingEvent;
-
-// fn is_quest_complete(mut crafting_events: ResMut<Events<CraftingEvent>>) -> bool {
-//     // return self.result == *created_ingredient;
-//     unimplemented!()
-// }

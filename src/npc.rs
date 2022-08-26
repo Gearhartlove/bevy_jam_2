@@ -126,7 +126,6 @@ fn setup_dialogue(mut commands: Commands, asset_server: Res<AssetServer>, curren
         font_size: 20.,
         color: Color::WHITE,
     };
-    // todo: change?
     let text_alignment = TextAlignment {
         vertical: VerticalAlign::Top,
         horizontal: HorizontalAlign::Left,
