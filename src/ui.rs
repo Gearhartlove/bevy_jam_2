@@ -39,7 +39,9 @@ impl Plugin for UiPlugin {
             .add_event::<ElementInfoEvent>()
             .add_event::<LoadMixerEvent>()
             .add_event::<LoadSlicerEvent>()
-            .add_event::<ElementInfoEvent>()
+            .add_event::<InsertElementEvent>()
+            .add_event::<PageUpEvent>()
+            .add_event::<PageDownEvent>()
             .add_startup_system(setup_ui)
             .add_system(render_slots)
             .add_system(render_dragging)
@@ -49,6 +51,8 @@ impl Plugin for UiPlugin {
             .add_system(check_for_slicer_craft)
             .add_system(test_system)
             //.add_system(on_drop_element.after(drag_item))
+            .add_system_to_stage(CoreStage::PostUpdate, on_load_mixer)
+            .add_system_to_stage(CoreStage::PostUpdate, on_load_slicer)
             .add_system_to_stage(CoreStage::PostUpdate, handle_slot_events)
             .add_system_to_stage(CoreStage::PostUpdate, hide_name)
             .add_system_to_stage(CoreStage::PostUpdate, show_name.after(hide_name))
@@ -95,6 +99,15 @@ pub struct LoadMixerEvent;
 pub struct LoadSlicerEvent;
 
 #[derive(Debug)]
+pub struct InsertElementEvent(Element);
+
+#[derive(Debug)]
+pub struct PageUpEvent;
+
+#[derive(Debug)]
+pub struct PageDownEvent;
+
+#[derive(Debug)]
 pub enum CraftType {
     SLICER,
     MIXER,
@@ -125,6 +138,51 @@ pub fn handle_slot_events (
 }
 
 
+//==================================================================================================
+//                          Event Reactors
+//==================================================================================================
+
+fn on_load_mixer(
+    mut commands: Commands,
+    mut ui_info : ResMut<UiData>,
+    mut load_mixer_event : EventReader<LoadMixerEvent>
+) {
+    if !load_mixer_event.is_empty() {
+        setup_mixer_slots(&mut commands, &mut ui_info.amount_of_slots_indices);
+        load_mixer_event.clear()
+    }
+}
+
+fn on_load_slicer(
+    mut commands: Commands,
+    mut ui_info : ResMut<UiData>,
+    mut load_slicer_event: EventReader<LoadSlicerEvent>
+) {
+    if !load_slicer_event.is_empty() {
+        setup_slicer_slot(&mut commands, &mut ui_info.amount_of_slots_indices);
+        load_slicer_event.clear()
+    }
+}
+
+fn on_insert_element(
+    mut ui_info : ResMut<UiData>,
+    mut insert_element_event : EventReader<InsertElementEvent>,
+    mut refresh_slots : EventWriter<RefreshSlotsEvent>,
+) {
+    for event in insert_element_event.iter() {
+        ui_info.add_element(event.0.clone());
+        refresh_slots.send(RefreshSlotsEvent)
+    }
+}
+
+fn on_page_up (
+    mut page_up_event : EventReader<PageUpEvent>,
+    mut ui_data : ResMut<UiData>
+) {
+    if ui_data.can_move_up() {
+
+    }
+}
 
 //==================================================================================================
 //                          DragInfo Resource
@@ -134,9 +192,41 @@ pub struct UiData {
     pub currently_dragging : Option<Element>,
     pub should_change_sprite : bool,
     pub sprite_size : f32,
-    pub last_slot : u32,
-    pub known_elements : Vec<Element>,
-    pub amount_of_slots : u32,
+    pub last_slot_hovered: u32,
+    known_elements : Vec<Element>,
+    pub amount_of_slots_indices: u32,
+    number_of_pages : u32,
+    pub current_page : u32
+}
+
+impl UiData {
+    pub fn can_move_up(&self) -> bool {
+        self.current_page != 0
+    }
+
+    pub fn can_move_down(&self) -> bool {
+        self.current_page != self.number_of_pages
+    }
+
+    pub fn add_element(&mut self, element : Element) {
+        if !self.known_elements.contains(&element) {
+            self.known_elements.push(element);
+            let element_amount = self.known_elements.len();
+            self.number_of_pages = ((element_amount - (element_amount % 12)) / 12) as u32
+        }
+    }
+
+    pub fn unsafe_add(&mut self, element : Element) {
+        self.known_elements.push(element)
+    }
+
+    pub fn number_of_pages(&self) -> u32 {
+        self.number_of_pages
+    }
+
+    pub fn known_elements(&self) -> &Vec<Element> {
+        &self.known_elements
+    }
 }
 
 impl Default for UiData {
@@ -145,9 +235,11 @@ impl Default for UiData {
             currently_dragging : None,
             should_change_sprite : false,
             sprite_size : 16.0,
-            last_slot: u32::MAX,
+            last_slot_hovered: u32::MAX,
             known_elements : Vec::new(),
-            amount_of_slots : 0
+            amount_of_slots_indices: 0,
+            number_of_pages: 0,
+            current_page : 0,
         }
     }
 }
@@ -213,6 +305,12 @@ pub struct TitleText;
 pub struct ToolSlot;
 
 #[derive(Component)]
+pub struct PageUp;
+
+#[derive(Component)]
+pub struct PageDown;
+
+#[derive(Component)]
 pub struct Slot {
     pub element : Option<Element>,
     pub index : u32,
@@ -263,17 +361,25 @@ impl Slot {
 //==================================================================================================
 
 fn test_system (
-    mut slot_update : EventWriter<UpdateSlotEvent>,
     keys: Res<Input<KeyCode>>,
     mut ui_data : ResMut<UiData>,
-    mut slot_refresh : EventWriter<RefreshSlotsEvent>
+    mut slot_refresh : EventWriter<RefreshSlotsEvent>,
+    mut load_mixer : EventWriter<LoadMixerEvent>,
+    mut load_slicer : EventWriter<LoadSlicerEvent>,
 ) {
     if keys.just_pressed(KeyCode::A) {
-        ui_data.known_elements.push(Element::FIRE_PEPPER.clone());
-        ui_data.known_elements.push(Element::YETI_WATER.clone());
-        //slot_update.send(UpdateSlotEvent(0, Some(Element::FIRE_PEPPER)));
-        //slot_update.send(UpdateSlotEvent(1, Some(Element::YETI_WATER)));
+        ui_data.unsafe_add(Element::FIRE_PEPPER.clone());
+        ui_data.unsafe_add(Element::YETI_WATER.clone());
+
         slot_refresh.send(RefreshSlotsEvent)
+    }
+
+    if keys.just_pressed(KeyCode::M) {
+        load_mixer.send(LoadMixerEvent)
+    }
+
+    if keys.just_pressed(KeyCode::S) {
+        load_slicer.send(LoadSlicerEvent)
     }
 }
 
@@ -287,31 +393,35 @@ fn check_for_mixer_craft(
     mut craft_failed_event : EventWriter<CraftFailedEvent>,
     mut craft_repeated_event: EventWriter<CraftRepeatedEvent>
 ) {
-    let mut slot_1 = slot_1_q.single_mut();
-    let mut slot_2 = slot_2_q.single_mut();
+    let mut slot_1 = slot_1_q.get_single_mut();
+    let mut slot_2 = slot_2_q.get_single_mut();
 
-    if slot_1.element.is_some() && slot_2.element.is_some() {
-        let element_1 = slot_1.element.as_ref().unwrap().clone();
-        let element_2 = slot_2.element.as_ref().unwrap().clone();
+    if let Ok(mut slot_1) = slot_1 {
+        if let Ok(mut slot_2) = slot_2 {
+            if slot_1.element.is_some() && slot_2.element.is_some() {
+                let element_1 = slot_1.element.as_ref().unwrap().clone();
+                let element_2 = slot_2.element.as_ref().unwrap().clone();
 
-        let iden = MixerRecipeIden::new(element_1, element_2);
+                let iden = MixerRecipeIden::new(element_1, element_2);
 
-        let recipe = registy.mixer_recipe_registry.get(&iden);
-        if recipe.is_some() {
-            let element = recipe.as_ref().unwrap().result.clone();
-            if !ui_data.known_elements.contains(&element) {
-                element_crafted_event.send(ElementCraftedEvent(element.clone()));
-                ui_data.known_elements.push(element);
-                refresh_slots.send(RefreshSlotsEvent);
-            } else {
-                craft_repeated_event.send(CraftRepeatedEvent(CraftType::MIXER))
+                let recipe = registy.mixer_recipe_registry.get(&iden);
+                if recipe.is_some() {
+                    let element = recipe.as_ref().unwrap().result.clone();
+                    if !ui_data.known_elements.contains(&element) {
+                        element_crafted_event.send(ElementCraftedEvent(element.clone()));
+                        ui_data.add_element(element);
+                        refresh_slots.send(RefreshSlotsEvent);
+                    } else {
+                        craft_repeated_event.send(CraftRepeatedEvent(CraftType::MIXER))
+                    }
+                } else {
+                    craft_failed_event.send(CraftFailedEvent(CraftType::MIXER))
+                }
+
+                slot_1.element = None;
+                slot_2.element = None;
             }
-        } else {
-            craft_failed_event.send(CraftFailedEvent(CraftType::MIXER))
         }
-
-        slot_1.element = None;
-        slot_2.element = None;
     }
 }
 
@@ -321,7 +431,9 @@ fn check_for_furnace_craft(
     registy : Res<Registry>,
     mut ui_data : ResMut<UiData>,
     mut refresh_slots : EventWriter<RefreshSlotsEvent>,
-    mut element_crafted_event : EventWriter<ElementCraftedEvent>
+    mut element_crafted_event : EventWriter<ElementCraftedEvent>,
+    mut craft_failed_event : EventWriter<CraftFailedEvent>,
+    mut craft_repeated_event: EventWriter<CraftRepeatedEvent>
 ) {
     let mut slot_2 = slot_1_q.single_mut();
     let mut slot_1 = slot_2_q.single_mut();
@@ -337,11 +449,15 @@ fn check_for_furnace_craft(
             let element = recipe.as_ref().unwrap().result.clone();
             if !ui_data.known_elements.contains(&element) {
                 element_crafted_event.send(ElementCraftedEvent(element.clone()));
-                ui_data.known_elements.push(element);
+                ui_data.add_element(element);
                 refresh_slots.send(RefreshSlotsEvent);
+            } else {
+                //Add the you already have this response
+                craft_repeated_event.send(CraftRepeatedEvent(CraftType::FURNACE))
             }
         } else {
             //Add error responce
+            craft_failed_event.send(CraftFailedEvent(CraftType::FURNACE))
         }
 
         slot_1.element = None;
@@ -351,36 +467,43 @@ fn check_for_furnace_craft(
 
 fn check_for_slicer_craft (
     mut slot_q : Query<&mut Slot, With<SlicerSlot>>,
-    registy : Res<Registry>,
+    registry: Res<Registry>,
     mut ui_data : ResMut<UiData>,
     mut refresh_slots : EventWriter<RefreshSlotsEvent>,
-    mut element_crafted_event : EventWriter<ElementCraftedEvent>
+    mut element_crafted_event : EventWriter<ElementCraftedEvent>,
+    mut craft_failed_event : EventWriter<CraftFailedEvent>,
+    mut craft_repeated_event: EventWriter<CraftRepeatedEvent>
 ) {
-    let mut slot = slot_q.single_mut();
+    let mut slot = slot_q.get_single_mut();
 
-    if slot.element.is_some() {
-        let element = slot.element.as_ref().unwrap().clone();
-        let recipe = registy.slicer_recipe_registry.get(&element);
-        if let Some(recipe) = recipe {
-            let result = recipe.result.clone();
-            if !ui_data.known_elements.contains(&result) {
-                element_crafted_event.send(ElementCraftedEvent(result.clone()));
-                ui_data.known_elements.push(result);
-                refresh_slots.send(RefreshSlotsEvent)
+    if let Ok(mut slot) = slot {
+        if slot.element.is_some() {
+            let element = slot.element.as_ref().unwrap().clone();
+            let recipe = registry.slicer_recipe_registry.get(&element);
+            if let Some(recipe) = recipe {
+                let result = recipe.result.clone();
+                if !ui_data.known_elements.contains(&result) {
+                    element_crafted_event.send(ElementCraftedEvent(result.clone()));
+                    ui_data.add_element(element);
+                    refresh_slots.send(RefreshSlotsEvent)
+                } else {
+                    // Add "already have that" response
+                    craft_repeated_event.send(CraftRepeatedEvent(CraftType::SLICER))
+                }
             } else {
-                // Add "already have that" response
+                //Add not a recipe response
+                craft_failed_event.send(CraftFailedEvent(CraftType::SLICER))
             }
-        } else {
-            //Add not a recipe response
-        }
 
-        slot.element = None;
+            slot.element = None;
+        }
     }
 }
 
 fn render_slots(
     mut slot : Query<(&Slot, &mut Handle<Image>, &mut Visibility)>,
-    asset_server: Res<AssetServer>
+    asset_server: Res<AssetServer>,
+    ui_data : Res<UiData>
 ) {
     for (s, mut handle, mut visibility) in slot.iter_mut() {
         if s.element.is_some() {
@@ -437,10 +560,10 @@ fn drag_item(
             is_in_slots = true;
         }
 
-        if is_within && drag_info.last_slot != slot.index {
-            left_slot_event.send(SlotLeftEvent(drag_info.last_slot));
+        if is_within && drag_info.last_slot_hovered != slot.index {
+            left_slot_event.send(SlotLeftEvent(drag_info.last_slot_hovered));
             entered_slot_event.send(SlotEnteredEvent(slot.index));
-            drag_info.last_slot = slot.index
+            drag_info.last_slot_hovered = slot.index
         }
 
         if is_within && buttons.just_pressed(MouseButton::Right) && slot.element.is_some() && slot.can_change {
@@ -463,9 +586,9 @@ fn drag_item(
         }
     }
 
-    if !is_in_slots && drag_info.last_slot != u32::MAX {
-        left_slot_event.send(SlotLeftEvent(drag_info.last_slot));
-        drag_info.last_slot = u32::MAX;
+    if !is_in_slots && drag_info.last_slot_hovered != u32::MAX {
+        left_slot_event.send(SlotLeftEvent(drag_info.last_slot_hovered));
+        drag_info.last_slot_hovered = u32::MAX;
     }
 }
 
@@ -574,13 +697,18 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
     let mut current_slots_taken = add_slot_array(&mut commands, -512.0, 200.0, 3, 4, 128.0);
     setup_furnace_slots(&mut commands, &mut current_slots_taken);
 
-    ui_info.amount_of_slots = current_slots_taken;
+    ui_info.amount_of_slots_indices = current_slots_taken;
 
     crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png",45, 28, SpriteBundle {
         transform: Transform::from_xyz(8.0, 88.0, TOP_LEVEL),
         visibility: Visibility { is_visible: false },
         ..default()
     }).insert(Name::new("X"));
+
+    crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/page_down.png", 9, 9, SpriteBundle{
+        transform: Transform::from_xyz(-188.0, -284.0, TOP_LEVEL),
+        ..default()
+    }).insert(Name::new("Page Down"));
 }
 
 fn add_slot_array(commands: &mut Commands, x : f32, y : f32, width : u32, height : u32, slot_size : f32) -> u32{
