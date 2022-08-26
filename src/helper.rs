@@ -52,7 +52,7 @@ fn update_mouse_world_pos(
 
 const DEFAULT_SPRITE_SCALING: f32 = 8.0;
 
-pub fn add_scaled_pixel_asset(commands : &mut Commands, asset_server: &Res<AssetServer>, path : &str, mut bundle : SpriteBundle) -> EntityCommands {
+pub fn add_scaled_pixel_asset<'w, 's, 'a>(commands : &'a mut Commands<'w, 's>, asset_server: &Res<AssetServer>, path : &str, mut bundle : SpriteBundle) -> EntityCommands<'w, 's, 'a> {
     let size = size(path);
 
     if let Ok(size) = size {
