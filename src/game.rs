@@ -27,15 +27,16 @@ pub enum GameStatus {
 
 pub struct Game {
     npcs: Vec<Entity>,
+    pub pages: Vec<Entity>,
     pub npc: NpcKind,
     pub status: GameStatus,
-
 }
 
 impl Default for Game {
     fn default() -> Self {
         Game {
             npcs: vec![],
+            pages: vec![],
             npc: NpcKind::Squee,
             status: GameStatus::QuestComplete,
         }

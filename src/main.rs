@@ -8,6 +8,7 @@ mod helper;
 mod quest;
 mod npc;
 mod game;
+mod page;
 
 use bevy::prelude::*;
 use bevy::render::texture::ImageSettings;
@@ -19,6 +20,7 @@ use bevy_prototype_debug_lines::DebugLinesPlugin;
 use crate::game::GamePlugin;
 use crate::helper::{GameHelper, HelperPlugin};
 use crate::npc::NpcPlugin;
+use crate::page::PagePlugin;
 use crate::quest::{QuestPlugin};
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -46,6 +48,7 @@ fn main() {
         .add_plugin(WorldInspectorPlugin::new()) // debugging window
         .add_plugin(QuestPlugin)
         .add_plugin(NpcPlugin)
+        .add_plugin(PagePlugin)
         .add_startup_system(setup_camera)
         .run();
 }
