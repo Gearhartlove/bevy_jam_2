@@ -37,7 +37,10 @@ impl Plugin for UiPlugin {
             .add_event::<CraftFailedEvent>()
             .add_event::<CraftRepeatedEvent>()
             .add_event::<ElementInfoEvent>()
-            .add_startup_system(add_slots)
+            .add_event::<LoadMixerEvent>()
+            .add_event::<LoadSlicerEvent>()
+            .add_event::<ElementInfoEvent>()
+            .add_startup_system(setup_ui)
             .add_system(render_slots)
             .add_system(render_dragging)
             .add_system(drag_item)
@@ -86,6 +89,12 @@ pub struct CraftRepeatedEvent(CraftType);
 pub struct ElementInfoEvent(Element);
 
 #[derive(Debug)]
+pub struct LoadMixerEvent;
+
+#[derive(Debug)]
+pub struct LoadSlicerEvent;
+
+#[derive(Debug)]
 pub enum CraftType {
     SLICER,
     MIXER,
@@ -126,7 +135,8 @@ pub struct UiData {
     pub should_change_sprite : bool,
     pub sprite_size : f32,
     pub last_slot : u32,
-    pub known_elements : Vec<Element>
+    pub known_elements : Vec<Element>,
+    pub amount_of_slots : u32,
 }
 
 impl Default for UiData {
@@ -136,7 +146,8 @@ impl Default for UiData {
             should_change_sprite : false,
             sprite_size : 16.0,
             last_slot: u32::MAX,
-            known_elements : Vec::new()
+            known_elements : Vec::new(),
+            amount_of_slots : 0
         }
     }
 }
@@ -438,6 +449,7 @@ fn drag_item(
 
         if is_within && buttons.just_pressed(MouseButton::Right) && slot.element.is_some() && !slot.can_change {
             element_info_event.send(ElementInfoEvent(slot.element.as_ref().unwrap().clone()));
+            println!("INFO PLEASE!")
         }
 
         if is_within && buttons.just_pressed(MouseButton::Left) && drag_info.currently_dragging.is_none() && slot.element.is_some() && !slot.can_change {
@@ -520,7 +532,7 @@ fn refresh_slots (
 //                          Setup
 //==================================================================================================
 
-pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_info : ResMut<UiData>) {
     commands
         .spawn_bundle(SpriteBundle {
             sprite : Sprite {
@@ -560,14 +572,15 @@ pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
     }).insert(Name::new("Item Hover Text")).insert(TitleText);
 
     let mut current_slots_taken = add_slot_array(&mut commands, -512.0, 200.0, 3, 4, 128.0);
-    setup_mixer_slots(&mut commands, &mut current_slots_taken);
     setup_furnace_slots(&mut commands, &mut current_slots_taken);
-    setup_slicer_slot(&mut commands, &mut current_slots_taken);
+
+    ui_info.amount_of_slots = current_slots_taken;
 
     crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png",45, 28, SpriteBundle {
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
+        transform: Transform::from_xyz(8.0, 88.0, TOP_LEVEL),
+        visibility: Visibility { is_visible: false },
         ..default()
-    });
+    }).insert(Name::new("X"));
 }
 
 fn add_slot_array(commands: &mut Commands, x : f32, y : f32, width : u32, height : u32, slot_size : f32) -> u32{
