@@ -33,12 +33,15 @@ impl Plugin for UiPlugin {
             .add_event::<SlotLeftEvent>()
             .add_event::<RefreshSlotsEvent>()
             .add_event::<ElementCraftedEvent>()
+            .add_event::<CraftFailedEvent>()
+            .add_event::<CraftRepeatedEvent>()
             .add_startup_system(add_slots)
             .add_system(render_slots)
             .add_system(render_dragging)
             .add_system(drag_item)
             .add_system(check_for_mixer_craft)
             .add_system(check_for_furnace_craft)
+            .add_system(check_for_slicer_craft)
             .add_system(test_system)
             //.add_system(on_drop_element.after(drag_item))
             .add_system_to_stage(CoreStage::PostUpdate, handle_slot_events)
@@ -70,6 +73,19 @@ pub struct RefreshSlotsEvent;
 
 #[derive(Debug)]
 pub struct ElementCraftedEvent(Element);
+
+#[derive(Debug)]
+pub struct CraftFailedEvent(CraftType);
+
+#[derive(Debug)]
+pub struct CraftRepeatedEvent(CraftType);
+
+#[derive(Debug)]
+pub enum CraftType {
+    SLICER,
+    MIXER,
+    FURNACE
+}
 
 pub fn handle_slot_events (
     mut slot_query : Query<(&mut Slot, &Transform, &Sprite)>,
@@ -251,7 +267,9 @@ fn check_for_mixer_craft(
     registy : Res<Registry>,
     mut ui_data : ResMut<UiData>,
     mut refresh_slots : EventWriter<RefreshSlotsEvent>,
-    mut element_crafted_event : EventWriter<ElementCraftedEvent>
+    mut element_crafted_event : EventWriter<ElementCraftedEvent>,
+    mut craft_failed_event : EventWriter<CraftFailedEvent>,
+    mut craft_repeated_event: EventWriter<CraftRepeatedEvent>
 ) {
     let mut slot_1 = slot_1_q.single_mut();
     let mut slot_2 = slot_2_q.single_mut();
@@ -269,9 +287,11 @@ fn check_for_mixer_craft(
                 element_crafted_event.send(ElementCraftedEvent(element.clone()));
                 ui_data.known_elements.push(element);
                 refresh_slots.send(RefreshSlotsEvent);
+            } else {
+                craft_repeated_event.send(CraftRepeatedEvent(CraftType::MIXER))
             }
         } else {
-
+            craft_failed_event.send(CraftFailedEvent(CraftType::MIXER))
         }
 
         slot_1.element = None;
@@ -310,6 +330,35 @@ fn check_for_furnace_craft(
 
         slot_1.element = None;
         slot_2.element = None;
+    }
+}
+
+fn check_for_slicer_craft (
+    mut slot_q : Query<&mut Slot, With<SlicerSlot>>,
+    registy : Res<Registry>,
+    mut ui_data : ResMut<UiData>,
+    mut refresh_slots : EventWriter<RefreshSlotsEvent>,
+    mut element_crafted_event : EventWriter<ElementCraftedEvent>
+) {
+    let mut slot = slot_q.single_mut();
+
+    if slot.element.is_some() {
+        let element = slot.element.as_ref().unwrap().clone();
+        let recipe = registy.slicer_recipe_registry.get(&element);
+        if let Some(recipe) = recipe {
+            let result = recipe.result.clone();
+            if !ui_data.known_elements.contains(&result) {
+                element_crafted_event.send(ElementCraftedEvent(result.clone()));
+                ui_data.known_elements.push(result);
+                refresh_slots.send(RefreshSlotsEvent)
+            } else {
+                // Add "already have that" response
+            }
+        } else {
+            //Add not a recipe response
+        }
+
+        slot.element = None;
     }
 }
 
@@ -456,6 +505,10 @@ fn refresh_slots (
         refresh_event.clear()
     }
 }
+
+//==================================================================================================
+//                          Setup
+//==================================================================================================
 
 pub fn add_slots(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
