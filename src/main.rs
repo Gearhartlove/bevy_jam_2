@@ -9,6 +9,7 @@ mod quest;
 mod npc;
 mod game;
 mod page;
+mod boss_fight;
 
 use bevy::prelude::*;
 use bevy::render::texture::ImageSettings;
