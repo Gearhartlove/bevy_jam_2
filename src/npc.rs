@@ -8,6 +8,7 @@ use crate::element::Element;
 use crate::game::{Game, GameStatus};
 use crate::game::GameStatus::QuestComplete;
 use crate::quest::Quest;
+use crate::ui::NPC_LEVEL;
 
 pub struct NpcPlugin;
 
@@ -117,7 +118,7 @@ fn setup_dialogue(
             custom_size: Some(Vec2::splat(128.)),
             ..default()
         },
-        transform: Transform::from_xyz(384., -128., 1.),
+        transform: Transform::from_xyz(384., 136., NPC_LEVEL),
         texture: asset_server.load("sprites/empty.png"),
         ..default()
     })
@@ -139,7 +140,7 @@ fn setup_dialogue(
 
     commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("", text_style).with_alignment(text_alignment),
-        transform: Transform::from_xyz(206.5, 143., 0.),
+        transform: Transform::from_xyz(206.5, 143., NPC_LEVEL),
         text_2d_bounds: Text2dBounds {
             size: Vec2::new(400., 4000.,)
         },
@@ -172,11 +173,11 @@ fn dialogue(
                     // match on the npc name
                     match npc.kind {
                         NpcKind::Squee => {
-                            change_sprite_size(16., 16., &mut sprite);
+                            change_sprite_size(28., 38., &mut sprite);
                             println!("squee")
                         }
                         NpcKind::Conrad => {
-                            change_sprite_size(16., 32., &mut sprite);
+                            change_sprite_size(28., 38., &mut sprite);
                             println!("conrad");
                         }
                     }

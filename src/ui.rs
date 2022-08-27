@@ -15,12 +15,14 @@ use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier2d::prelude::Collider;
 use crate::element::Element;
 use crate::{GameHelper, MixerRecipeIden};
+use crate::helper::add_scaled_pixel_asset;
 use crate::registry::{FurnaceRecipeIden, Registry};
 
 const TAVERN_LEVEL : f32 = 10.0;
-const UI_LEVEL: f32 = 20.0;
+pub const NPC_LEVEL: f32 = 15.;
+pub const UI_LEVEL: f32 = 20.0;
 const SLOT_LEVEL : f32 = 30.0;
-const TEXT_LEVEL : f32 = 40.0;
+pub const TEXT_LEVEL : f32 = 40.0;
 const TOP_LEVEL : f32 = 50.0;
 
 pub struct UiPlugin;
@@ -764,6 +766,18 @@ fn refresh_slots (
 //==================================================================================================
 
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_info : ResMut<UiData>) {
+    // spawn background
+    // crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/tavern_bg.png", 45, 28, SpriteBundle {
+    //     transform: Transform::from_xyz(8.0, 88.0, TOP_LEVEL),
+    //     visibility: Visibility { is_visible: false },
+    //     ..default()
+    // }
+    commands.spawn_bundle(SpriteBundle {
+        texture: asset_server.load("sprites/tavern_bg.png"),
+        transform: Transform::from_xyz(0.0, 0.0, TAVERN_LEVEL),
+        ..default()
+    });
+
     commands
         .spawn_bundle(SpriteBundle {
             sprite : Sprite {

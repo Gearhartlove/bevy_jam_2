@@ -2,13 +2,13 @@ use bevy::prelude::*;
 use bevy::text::Text2dBounds;
 use crate::element::Element;
 use crate::game::Game;
-use crate::ui::ElementInfoEvent;
+use crate::ui::{ElementInfoEvent, TEXT_LEVEL, UI_LEVEL};
 
 pub struct PagePlugin;
 
 impl PagePlugin {
-    pub const ON_SCREEN_POS: Transform = Transform::from_xyz(392., 0., 10.);
-    pub const OFF_SCREEN_POS: Transform = Transform::from_xyz(877., 0., 10.);
+    pub const ON_SCREEN_POS: Transform = Transform::from_xyz(392., 0., UI_LEVEL);
+    pub const OFF_SCREEN_POS: Transform = Transform::from_xyz(877., 0., UI_LEVEL);
 }
 
 impl Plugin for PagePlugin {
@@ -104,7 +104,7 @@ fn setup(mut game: ResMut<Game>, mut commands: Commands, asset_server: Res<Asset
                 ..default()
             },
             // offscreen = 877
-            transform: Transform::from_xyz(877., 0., 10.),
+            transform: Transform::from_xyz(877., 0., UI_LEVEL),
             texture: asset_server.load("sprites/page.png"),
             ..default()
         })
@@ -119,7 +119,7 @@ fn setup(mut game: ResMut<Game>, mut commands: Commands, asset_server: Res<Asset
             custom_size: Some(Vec2::new(16. * 8., 16. * 8.)),
             ..default()
         },
-        transform: Transform::from_xyz(0., 152., 15.),
+        transform: Transform::from_xyz(0., 152., UI_LEVEL + 5.),
         texture: asset_server.load("sprites/empty.png"),
         ..default()
     })
@@ -148,7 +148,7 @@ fn setup(mut game: ResMut<Game>, mut commands: Commands, asset_server: Res<Asset
 
     let title = commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("", title_style).with_alignment(title_alignment),
-        transform: Transform::from_xyz(0., 42.5, 15.),
+        transform: Transform::from_xyz(0., 42.5, TEXT_LEVEL),
         ..default()
     })
         .insert(PageTitle)
@@ -157,7 +157,7 @@ fn setup(mut game: ResMut<Game>, mut commands: Commands, asset_server: Res<Asset
 
     let text = commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("", text_style).with_alignment(text_alignment),
-        transform: Transform::from_xyz(-119.7, -1.5, 15.),
+        transform: Transform::from_xyz(-119.7, -1.5, TEXT_LEVEL),
         text_2d_bounds: Text2dBounds {
             size: Vec2::new(282., 100.),
         },

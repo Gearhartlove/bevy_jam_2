@@ -5,7 +5,7 @@ use crate::game::GameStatus::QuestComplete;
 use crate::npc::{Npc, NpcKind, Say};
 use crate::npc::NpcKind::Squee;
 use crate::quest::{CraftingTable, Quest};
-use crate::ui::{ElementCraftedEvent, InsertElementEvent, LoadMixerEvent, LoadSlicerEvent, RefreshSlotsEvent, UiData};
+use crate::ui::{ElementCraftedEvent, InsertElementEvent, LoadMixerEvent, LoadSlicerEvent, RefreshSlotsEvent, UI_LEVEL, UiData};
 
 pub struct GamePlugin;
 
@@ -87,7 +87,7 @@ fn setup_crafting_tables(
             custom_size: Some(Vec2::splat(16. * 8.)),
             ..default()
         },
-        transform: Transform::from_xyz(0., 264., 0.),
+        transform: Transform::from_xyz(0., 264., UI_LEVEL),
         texture: asset_server.load("sprites/slicer.png"),
         visibility: Visibility {
             is_visible: false
@@ -102,7 +102,7 @@ fn setup_crafting_tables(
             custom_size: Some(Vec2::new(16. * 8., 32. * 8.)),
             ..default()
         },
-        transform: Transform::from_xyz(0., -152., 0.),
+        transform: Transform::from_xyz(0., -152., UI_LEVEL),
         texture: asset_server.load("sprites/furnace.png"),
         // visibility: Default::default(),
         ..default()
@@ -115,7 +115,7 @@ fn setup_crafting_tables(
             custom_size: Some(Vec2::new(32. * 8., 16. * 8.)),
             ..default()
         },
-        transform: Transform::from_xyz(0., 88., 0.),
+        transform: Transform::from_xyz(0., 88., UI_LEVEL),
         texture: asset_server.load("sprites/mixer.png"),
         visibility: Visibility {
             is_visible: false
@@ -147,8 +147,8 @@ fn create_npcs(mut commands: Commands, asset_server: Res<AssetServer>, mut game:
             Npc {
                 kind: NpcKind::Squee,
                 name: "Squee the Thumbless".to_string(),
-                sprite: asset_server.load("sprites/goblin.png"),
-                sprite_path: "sprites/goblin.png".to_string(),
+                sprite: asset_server.load("sprites/squee.png"),
+                sprite_path: "sprites/squee.png".to_string(),
                 // voice: asset_server.load("voice/goblin_voice.png"),
             }
         )
