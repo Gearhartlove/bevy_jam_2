@@ -1,5 +1,6 @@
 use bevy::math::Vec2Swizzles;
 use bevy::prelude::*;
+use bevy::text::Text2dBounds;
 use bevy_inspector_egui::egui::FontSelection::Style;
 use imagesize::size;
 use crate::AppState;
@@ -32,7 +33,7 @@ impl Npc {
     pub const GOBLIN_NPC: &'static str = "sprites/goblin.png";
 }
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum NpcKind {
     Squee,
     Conrad
@@ -102,7 +103,12 @@ pub struct NpcText;
 pub struct NpcSprite;
 
 /// Spawns the sprite and the text box for the npc
-fn setup_dialogue(mut commands: Commands, asset_server: Res<AssetServer>, current_quest: Res<Quest<'static>>, game: Res<Game>) {
+fn setup_dialogue(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    current_quest: Res<Quest<'static>>,
+    game: Res<Game>
+) {
     let npc_file_path = current_quest;
 
     // npc
@@ -112,7 +118,7 @@ fn setup_dialogue(mut commands: Commands, asset_server: Res<AssetServer>, curren
             ..default()
         },
         transform: Transform::from_xyz(384., -128., 1.),
-        texture: asset_server.load("sprites/empty.png"), // why?
+        texture: asset_server.load("sprites/empty.png"),
         ..default()
     })
         .insert(NpcSprite)
@@ -133,7 +139,10 @@ fn setup_dialogue(mut commands: Commands, asset_server: Res<AssetServer>, curren
 
     commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("", text_style).with_alignment(text_alignment),
-        transform: Transform::from_xyz(206.5, 93., 0.),
+        transform: Transform::from_xyz(206.5, 143., 0.),
+        text_2d_bounds: Text2dBounds {
+            size: Vec2::new(400., 4000.,)
+        },
         ..default()
     })
         .insert(NpcText)
@@ -164,6 +173,7 @@ fn dialogue(
                     match npc.kind {
                         NpcKind::Squee => {
                             change_sprite_size(16., 16., &mut sprite);
+                            println!("squee")
                         }
                         NpcKind::Conrad => {
                             change_sprite_size(16., 32., &mut sprite);

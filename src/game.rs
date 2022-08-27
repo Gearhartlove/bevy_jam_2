@@ -3,8 +3,9 @@ use bevy::prelude::*;
 use crate::element::Element;
 use crate::game::GameStatus::QuestComplete;
 use crate::npc::{Npc, NpcKind, Say};
-use crate::quest::Quest;
-use crate::ui::ElementCraftedEvent;
+use crate::npc::NpcKind::Squee;
+use crate::quest::{CraftingTable, Quest};
+use crate::ui::{ElementCraftedEvent, InsertElementEvent, LoadCraftingTableEvent, LoadMixerEvent, LoadSlicerEvent, RefreshSlotsEvent, UiData};
 
 pub struct GamePlugin;
 
@@ -13,6 +14,7 @@ impl Plugin for GamePlugin {
         app
             .init_resource::<Game>()
             .add_startup_system(create_npcs)
+            .add_startup_system(setup_elements)
             .add_system_to_stage(CoreStage::PostUpdate, check_if_quest_completed)
             .add_system(give_next_quest);
     }
@@ -54,6 +56,16 @@ impl Game {
     }
 }
 
+fn setup_elements(
+    mut ui_data: ResMut<UiData>,
+    mut slot_refresh: EventWriter<RefreshSlotsEvent>,
+) {
+    ui_data.unsafe_add(Element::YETI_WATER.clone());
+    ui_data.unsafe_add(Element::FROST_BOTTLE.clone());
+
+    slot_refresh.send(RefreshSlotsEvent)
+}
+
 fn create_npcs(mut commands: Commands, asset_server: Res<AssetServer>, mut game: ResMut<Game>) {
     let squee_entity = commands
         .spawn()
@@ -62,7 +74,7 @@ fn create_npcs(mut commands: Commands, asset_server: Res<AssetServer>, mut game:
                 kind: NpcKind::Squee,
                 name: "Squee the Thumbless".to_string(),
                 sprite: asset_server.load("sprites/goblin.png"),
-                sprite_path: "sprites/goblin.png".to_string()
+                sprite_path: "sprites/goblin.png".to_string(),
                 // voice: asset_server.load("voice/goblin_voice.png"),
             }
         )
@@ -76,7 +88,7 @@ fn create_npcs(mut commands: Commands, asset_server: Res<AssetServer>, mut game:
                 kind: NpcKind::Conrad,
                 name: "Sir Conrad".to_string(),
                 sprite: asset_server.load("sprites/knight.png"),
-                sprite_path: "sprites/knight.png".to_string()
+                sprite_path: "sprites/knight.png".to_string(),
             }
         )
         .insert(Name::new("Sir Conrad Entity"))
@@ -93,8 +105,10 @@ pub fn give_next_quest(mut commands: Commands, mut game: ResMut<Game>, mut quest
         game.status = GameStatus::QuestInProgress;
 
         // update next quest
-        *current_quest = quest_iter.next().unwrap();
-        println!("\nCURRENT QUEST: {:?}", *current_quest);
+        if let Some(q) =quest_iter.next() {
+            *current_quest = q;
+        }
+        //println!("\nNEW QUEST: {:?}", *current_quest);
 
         match game.npc {
             NpcKind::Squee => {
@@ -106,21 +120,17 @@ pub fn give_next_quest(mut commands: Commands, mut game: ResMut<Game>, mut quest
                         "Debug Text. Combine the two elements,\n\
                         thanks xD"
                     ));
-                }
-                else if current_quest.result == Element::GLACIER_ICE {
+                } else if current_quest.result == Element::GLACIER_ICE {
                     commands.entity(squee).insert(Say::new(
-                        "Try using the furnace to make some \n\
-                    will ya? I heard ice in the oven makes \n\
-                    it real cold."
+                        "Try using the furnace to make some ice will ya? I heard ice in the oven makes it real cold."
                     ));
                 } else if current_quest.result == Element::SHAVED_ICE {
                     commands.entity(squee).insert(Say::new(
-                        "I need Ice Ice ICE! Try cutting some of that \n\
-                        glacier, will ya?"
+                        "I need Ice Ice ICE! Try cutting some of that glacier, will ya?"
                     ));
                 } else if current_quest.result == Element::UTTER_ICE_CREAM {
                     commands.entity(squee).insert(Say::new(
-                        "Squeeeee neeeeeds ice creeeeem! \n... \n\
+                        "Squeeeee neeeeeds ice creeeeem! \n...\n\
                         Try mixing some of those ingredients up!."
                     ));
                 } else {
@@ -149,12 +159,48 @@ pub fn give_next_quest(mut commands: Commands, mut game: ResMut<Game>, mut quest
 fn check_if_quest_completed(
     mut current_quest: Res<Quest<'static>>,
     mut game: ResMut<Game>,
-    mut combine_event: EventReader<ElementCraftedEvent>
+    mut combine_event: EventReader<ElementCraftedEvent>,
+    mut mixer_unlock: EventWriter<LoadMixerEvent>,
+    mut slicer_unlock: EventWriter<LoadSlicerEvent>,
+    mut reward_writer: EventWriter<InsertElementEvent>,
 ) {
-    for combine in combine_event.iter() {
-        println!("comparing: \n{:?} \n{:?}", combine.0, current_quest.result.clone());
-        if combine.0 == current_quest.result {
-            println!("changing game state");
+    for combination in combine_event.iter() {
+        // if quest is complete
+        if combination.0 == current_quest.result {
+            // unlock npc
+            let npc = current_quest.npc.clone();
+            match npc {
+                NpcKind::Squee => {
+                    game.npc = NpcKind::Squee;
+                    println!("change npc to squee");
+                },
+                NpcKind::Conrad => {
+                    game.npc = NpcKind::Conrad;
+                    println!("change npc to conrad");
+                }
+            }
+            // unlock crafting table
+            if let Some(craft) = current_quest.crafting_table.clone() {
+                match craft {
+                    CraftingTable::Mixer => {
+                        mixer_unlock.send(LoadMixerEvent);
+                    }
+                    CraftingTable::Slicer => {
+                        slicer_unlock.send(LoadSlicerEvent);
+                    }
+                    CraftingTable::Furnace => {
+                        // default unlocked
+                    }
+                }
+            }
+
+            // rewards
+            if let Some(rewards) = current_quest.rewards {
+                for r in rewards.iter() {
+                    reward_writer.send(InsertElementEvent(r.clone()));
+                }
+            }
+
             game.status = QuestComplete;
         }
     }

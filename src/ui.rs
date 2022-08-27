@@ -14,6 +14,7 @@ use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier2d::prelude::Collider;
 use crate::element::Element;
 use crate::{GameHelper, MixerRecipeIden};
+use crate::quest::CraftingTable;
 use crate::registry::{FurnaceRecipeIden, Registry};
 
 const TAVERN_LEVEL : f32 = 10.0;
@@ -37,6 +38,7 @@ impl Plugin for UiPlugin {
             .add_event::<CraftFailedEvent>()
             .add_event::<CraftRepeatedEvent>()
             .add_event::<ElementInfoEvent>()
+            .add_event::<LoadCraftingTableEvent>()
             .add_event::<LoadMixerEvent>()
             .add_event::<LoadSlicerEvent>()
             .add_event::<InsertElementEvent>()
@@ -53,6 +55,7 @@ impl Plugin for UiPlugin {
             //.add_system(on_drop_element.after(drag_item))
             .add_system_to_stage(CoreStage::PostUpdate, on_load_mixer)
             .add_system_to_stage(CoreStage::PostUpdate, on_load_slicer)
+            .add_system_to_stage(CoreStage::PostUpdate, on_insert_element)
             .add_system_to_stage(CoreStage::PostUpdate, handle_slot_events)
             .add_system_to_stage(CoreStage::PostUpdate, hide_name)
             .add_system_to_stage(CoreStage::PostUpdate, show_name.after(hide_name))
@@ -93,13 +96,16 @@ pub struct CraftRepeatedEvent(CraftType);
 pub struct ElementInfoEvent(pub Element);
 
 #[derive(Debug)]
-pub struct LoadMixerEvent;
+pub struct LoadCraftingTableEvent(pub CraftingTable);
 
 #[derive(Debug)]
 pub struct LoadSlicerEvent;
 
 #[derive(Debug)]
-pub struct InsertElementEvent(Element);
+pub struct LoadMixerEvent;
+
+#[derive(Debug)]
+pub struct InsertElementEvent(pub Element);
 
 #[derive(Debug)]
 pub struct PageUpEvent;
@@ -368,7 +374,7 @@ fn test_system (
     mut load_slicer : EventWriter<LoadSlicerEvent>,
 ) {
     if keys.just_pressed(KeyCode::A) {
-        ui_data.unsafe_add(Element::FIRE_PEPPER.clone());
+        ui_data.unsafe_add(Element::GLACIER_ICE.clone());
         ui_data.unsafe_add(Element::YETI_WATER.clone());
 
         slot_refresh.send(RefreshSlotsEvent)
@@ -484,15 +490,16 @@ fn check_for_slicer_craft (
                 let result = recipe.result.clone();
                 if !ui_data.known_elements.contains(&result) {
                     element_crafted_event.send(ElementCraftedEvent(result.clone()));
-                    ui_data.add_element(element);
+                    // println!("slicer craft success: {:?}", element.clone());
+                    ui_data.add_element(result);
                     refresh_slots.send(RefreshSlotsEvent)
                 } else {
                     // Add "already have that" response
-                    craft_repeated_event.send(CraftRepeatedEvent(CraftType::SLICER))
+                    craft_repeated_event.send(CraftRepeatedEvent(CraftType::SLICER));
                 }
             } else {
                 //Add not a recipe response
-                craft_failed_event.send(CraftFailedEvent(CraftType::SLICER))
+                craft_failed_event.send(CraftFailedEvent(CraftType::SLICER));
             }
 
             slot.element = None;

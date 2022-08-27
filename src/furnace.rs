@@ -10,12 +10,14 @@ pub struct FurnaceRecipe {
 }
 
 impl FurnaceRecipe {
+    // format: fuel, object, result
     pub const GLACIER_ICE: FurnaceRecipe = FurnaceRecipe::new(Element::FROST_BOTTLE, Element::YETI_WATER, Element::GLACIER_ICE);
-    pub const TEST: FurnaceRecipe = FurnaceRecipe::new(Element::FIRE_PEPPER, Element::YETI_WATER, Element::LEGEND_DAIRY);
 
-    pub const RECIPES: [FurnaceRecipe; 2] = [
+    //pub const TEST: FurnaceRecipe = FurnaceRecipe::new(Element::FIRE_PEPPER, Element::YETI_WATER, Element::LEGEND_DAIRY);
+
+    pub const RECIPES: [FurnaceRecipe; 1] = [
         FurnaceRecipe::GLACIER_ICE,
-        FurnaceRecipe::TEST
+        // FurnaceRecipe::TEST,
     ];
 
     pub const fn new(fuel: Element, object: Element, result: Element) -> Self {
@@ -29,14 +31,5 @@ impl FurnaceRecipe {
     pub fn id(&self) -> String {
         let id = format!("{}_{}", self.fuel.id, self.object.id);
         return id;
-    }
-}
-
-pub fn get_result(fuel : Element, object : Element, registry : &Res<Registry>) -> Option<Element> {
-    let iden = FurnaceRecipeIden::new(fuel, object);
-    if let Some(fr)  = registry.furnace_recipe_registry.get(&iden) {
-        Some(fr.result.clone())
-    } else {
-        None
     }
 }

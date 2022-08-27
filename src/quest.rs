@@ -3,7 +3,7 @@ use std::collections::LinkedList;
 use bevy::prelude::*;
 use crate::AppState;
 use crate::element::Element;
-use crate::npc::NpcPlugin;
+use crate::npc::{Npc, NpcKind, NpcPlugin};
 
 pub struct QuestPlugin;
 
@@ -14,7 +14,7 @@ impl Plugin for QuestPlugin {
         app
             .insert_resource(quests)
             .insert_resource(current_quest)
-            // .add_system_to_stage(CoreStage::PostUpdate, is_quest_complete);
+        // .add_system_to_stage(CoreStage::PostUpdate, is_quest_complete);
         ;
     }
 }
@@ -22,12 +22,13 @@ impl Plugin for QuestPlugin {
 #[derive(Debug, Clone)]
 pub struct Quest<'r> {
     pub result: Element,
-    reward: Option<&'r[Element]>,
-    crafting_table: Option<CraftingTable>,
+    pub rewards: Option<&'r [Element]>,
+    pub crafting_table: Option<CraftingTable>,
+    pub npc: NpcKind,
 }
 
 #[derive(Debug, Clone)]
-enum CraftingTable {
+pub enum CraftingTable {
     Furnace,
     Mixer,
     Slicer,
@@ -39,19 +40,12 @@ impl<'r> Quest<'r> {
     // #####################################################################
     // Note default unlocked ingredients: Frost Bottle, Yeti Water
 
-    pub const DEBUG_QUEST: Quest<'r> = {
-        Quest::new(
-            Element::LEGEND_DAIRY, // Result
-            None,  // Reward
-            None, // Crafting Table Reward
-        )
-    };
-
     pub const GLACIER_ICE_QUEST: Quest<'r> = {
         Quest::new(
             Element::GLACIER_ICE, // Result
             None,  // Reward
             Some(CraftingTable::Slicer), // Crafting Table Reward
+            NpcKind::Squee, // Npc
         )
     };
 
@@ -60,25 +54,34 @@ impl<'r> Quest<'r> {
             Element::SHAVED_ICE, // Result
             Some(&[Element::LEGEND_DAIRY]),  // Reward
             Some(CraftingTable::Mixer), // Crafting Table Reward
+            NpcKind::Squee, // Npc
         )
     };
 
     pub const UTTER_ICE_CREAM_QUEST: Quest<'r> = {
         Quest::new(
             Element::UTTER_ICE_CREAM, // Result
-            Some(&[Element::GRIFFON_EGGS, Element::FIRE_PEPPER]),  // Reward
+            // Some(&[Element::GRIFFON_EGGS, Element::FIRE_PEPPER]),  // Reward
+            None, // Reward
             None, // Crafting Table Reward
+            NpcKind::Squee, // Npc
         )
     };
     // #####################################################################
     // New quest chapter
     // #####################################################################
 
-    const fn new(result: Element, reward: Option<&'r[Element]>, crafting_table: Option<CraftingTable>) -> Self {
+    const fn new(
+        result: Element,
+        reward: Option<&'r [Element]>,
+        crafting_table: Option<CraftingTable>,
+        npc: NpcKind,
+    ) -> Self {
         Self {
             result,
-            reward,
+            rewards: reward,
             crafting_table,
+            npc
         }
     }
 }
@@ -91,6 +94,3 @@ fn setup_quests() -> IntoIter<Quest<'static>> {
 
     return ll.into_iter();
 }
-
-// temporary; todo: change to brook's event name
-struct CraftingEvent;
