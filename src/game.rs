@@ -5,7 +5,7 @@ use crate::game::GameStatus::QuestComplete;
 use crate::npc::{Npc, NpcKind, Say};
 use crate::npc::NpcKind::Squee;
 use crate::quest::{CraftingTable, Quest};
-use crate::ui::{ElementCraftedEvent, InsertElementEvent, LoadCraftingTableEvent, LoadMixerEvent, LoadSlicerEvent, RefreshSlotsEvent, UiData};
+use crate::ui::{ElementCraftedEvent, InsertElementEvent, LoadMixerEvent, LoadSlicerEvent, RefreshSlotsEvent, UiData};
 
 pub struct GamePlugin;
 

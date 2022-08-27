@@ -57,6 +57,7 @@ impl Plugin for UiPlugin {
             .add_system_to_stage(CoreStage::PostUpdate, on_load_mixer)
             .add_system_to_stage(CoreStage::PostUpdate, on_load_slicer)
             .add_system_to_stage(CoreStage::PostUpdate, on_failed_craft)
+            .add_system_to_stage(CoreStage::PostUpdate, on_insert_element)
             .add_system_to_stage(CoreStage::PostUpdate, handle_slot_events)
             .add_system_to_stage(CoreStage::PostUpdate, hide_name)
             .add_system_to_stage(CoreStage::PostUpdate, show_name.after(hide_name))
@@ -103,7 +104,7 @@ pub struct LoadMixerEvent;
 pub struct LoadSlicerEvent;
 
 #[derive(Debug)]
-pub struct InsertElementEvent(Element);
+pub struct InsertElementEvent(pub Element);
 
 #[derive(Debug)]
 pub struct PageUpEvent;
@@ -585,7 +586,7 @@ fn check_for_slicer_craft (
                 let result = recipe.result.clone();
                 if !ui_data.known_elements.contains(&result) {
                     element_crafted_event.send(ElementCraftedEvent(result.clone()));
-                    ui_data.add_element(element);
+                    ui_data.add_element(result);
                     refresh_slots.send(RefreshSlotsEvent)
                 } else {
                     // Add "already have that" response
