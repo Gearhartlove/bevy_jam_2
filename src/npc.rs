@@ -140,7 +140,7 @@ fn setup_dialogue(
 
     commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("", text_style).with_alignment(text_alignment),
-        transform: Transform::from_xyz(206.5, 143., NPC_LEVEL),
+        transform: Transform::from_xyz(206.5, 290., NPC_LEVEL),
         text_2d_bounds: Text2dBounds {
             size: Vec2::new(400., 4000.,)
         },
