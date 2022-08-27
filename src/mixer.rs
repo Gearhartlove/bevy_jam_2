@@ -12,7 +12,7 @@ pub struct MixerRecipe {
 }
 
 impl MixerRecipe {
-    pub const TEST: MixerRecipe = MixerRecipe::new(Element::LEGEND_DAIRY, Element::FIRE_PEPPER, Element::GLACIER_ICE);
+    pub const TEST: MixerRecipe = MixerRecipe::new(Element::LEGEND_DAIRY, Element::MAGMA_PEPPER, Element::GLACIER_ICE);
     pub const UTTER_ICE_CREAM: MixerRecipe = MixerRecipe::new(Element::SHAVED_ICE, Element::LEGEND_DAIRY, Element::UTTER_ICE_CREAM);
 
     pub const RECIPES: [MixerRecipe; 2] = [

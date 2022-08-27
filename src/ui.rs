@@ -396,7 +396,7 @@ fn test_system (
     mut load_slicer : EventWriter<LoadSlicerEvent>,
 ) {
     if keys.just_pressed(KeyCode::A) {
-        ui_data.unsafe_add(Element::FIRE_PEPPER.clone());
+        ui_data.unsafe_add(Element::MAGMA_PEPPER.clone());
         ui_data.unsafe_add(Element::YETI_WATER.clone());
 
         slot_refresh.send(RefreshSlotsEvent)

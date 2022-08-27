@@ -11,7 +11,7 @@ pub struct FurnaceRecipe {
 
 impl FurnaceRecipe {
     // format: fuel, object, result
-    pub const GLACIER_ICE: FurnaceRecipe = FurnaceRecipe::new(Element::FROST_BOTTLE, Element::YETI_WATER, Element::GLACIER_ICE);
+    pub const GLACIER_ICE: FurnaceRecipe = FurnaceRecipe::new(Element::FROZEN_DRAGON_SCALE, Element::YETI_WATER, Element::GLACIER_ICE);
 
     //pub const TEST: FurnaceRecipe = FurnaceRecipe::new(Element::FIRE_PEPPER, Element::YETI_WATER, Element::LEGEND_DAIRY);
 

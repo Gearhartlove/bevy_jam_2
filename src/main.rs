@@ -18,6 +18,7 @@ use crate::AppState::{Game};
 use crate::registry::{MixerRecipeIden, RegistryPlugin};
 use crate::ui::UiPlugin;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
+use crate::boss_fight::BossFightPlugin;
 use crate::game::GamePlugin;
 use crate::helper::{GameHelper, HelperPlugin};
 use crate::npc::NpcPlugin;
@@ -50,6 +51,7 @@ fn main() {
         .add_plugin(QuestPlugin)
         .add_plugin(NpcPlugin)
         .add_plugin(PagePlugin)
+        .add_plugin(BossFightPlugin)
         .add_startup_system(setup_camera)
         .run();
 }

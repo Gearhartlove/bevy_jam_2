@@ -61,7 +61,7 @@ fn setup_elements(
     mut slot_refresh: EventWriter<RefreshSlotsEvent>,
 ) {
     ui_data.unsafe_add(Element::YETI_WATER.clone());
-    ui_data.unsafe_add(Element::FROST_BOTTLE.clone());
+    ui_data.unsafe_add(Element::FROZEN_DRAGON_SCALE.clone());
 
     slot_refresh.send(RefreshSlotsEvent)
 }
