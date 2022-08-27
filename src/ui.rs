@@ -772,11 +772,11 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
     //     visibility: Visibility { is_visible: false },
     //     ..default()
     // }
-    commands.spawn_bundle(SpriteBundle {
-        texture: asset_server.load("sprites/tavern_bg.png"),
-        transform: Transform::from_xyz(0.0, 0.0, TAVERN_LEVEL),
-        ..default()
-    });
+    // commands.spawn_bundle(SpriteBundle {
+    //     texture: asset_server.load("sprites/tavern_bg.png"),
+    //     transform: Transform::from_xyz(0.0, 0.0, TAVERN_LEVEL),
+    //     ..default()
+    // });
 
     commands
         .spawn_bundle(SpriteBundle {
@@ -793,11 +793,11 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
         .insert(DragEntity)
         .insert(Name::new("Drag Entity"));
 
-    commands.spawn_bundle(SpriteBundle {
-        texture: asset_server.load("sprites/kitchen_bg.png"),
-        transform: Transform::from_xyz(0.0, 0.0, UI_LEVEL),
-        ..default()
-    });
+    // commands.spawn_bundle(SpriteBundle {
+    //     texture: asset_server.load("sprites/kitchen_bg.png"),
+    //     transform: Transform::from_xyz(0.0, 0.0, UI_LEVEL),
+    //     ..default()
+    // });
 
     let font = asset_server.load("fonts/pixel_font.ttf");
     let text_style = TextStyle {
@@ -821,7 +821,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
 
     ui_info.amount_of_slots_indices = current_slots_taken;
 
-    crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png",45, 28, SpriteBundle {
+    add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png",45, 28, SpriteBundle {
         transform: Transform::from_xyz(8.0, 88.0, TOP_LEVEL),
         visibility: Visibility { is_visible: false },
         ..default()
@@ -830,7 +830,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
         .insert(ToolBlinker(CraftType::MIXER))
         .insert(FailBlinker);
 
-    crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png",45, 28, SpriteBundle {
+    add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png",45, 28, SpriteBundle {
         transform: Transform::from_xyz(8.0, 278.0, TOP_LEVEL),
         visibility: Visibility { is_visible: false },
         ..default()
@@ -839,7 +839,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
         .insert(ToolBlinker(CraftType::SLICER))
         .insert(FailBlinker);
 
-    crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png",45, 28, SpriteBundle {
+    add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png",45, 28, SpriteBundle {
         transform: Transform::from_xyz(8.0, -132.0, TOP_LEVEL),
         visibility: Visibility { is_visible: false },
         ..default()
@@ -848,15 +848,27 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
         .insert(ToolBlinker(CraftType::FURNACE))
         .insert(FailBlinker);
 
-    crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/page_down.png", 9, 9, SpriteBundle{
+    add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/page_down.png", 9, 9, SpriteBundle{
         transform: Transform::from_xyz(-180.0, -276.0, TOP_LEVEL),
         ..default()
     }).insert(Name::new("Page Down")).insert(PageDown);
 
-    crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/page_up.png", 9, 9, SpriteBundle{
+    add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/page_up.png", 9, 9, SpriteBundle{
         transform: Transform::from_xyz(-180.0, 292.0, TOP_LEVEL),
         ..default()
     }).insert(Name::new("Page Up")).insert(PageUp);
+
+    //BG Image
+    add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/tavern_bg.png", 160, 90, SpriteBundle{
+        transform : Transform::from_xyz(0.0, 0.0, TAVERN_LEVEL),
+        ..default()
+    }).insert(Name::new("Tavern BG"));
+
+    //Element ui
+    add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/element_book.png", 60, 82, SpriteBundle{
+        transform : Transform::from_xyz(-400.0, 8.0, UI_LEVEL),
+        ..default()
+    }).insert(Name::new("Element Book"));
 }
 
 fn add_slot_array(commands: &mut Commands, x : f32, y : f32, width : u32, height : u32, slot_size : f32) -> u32{
