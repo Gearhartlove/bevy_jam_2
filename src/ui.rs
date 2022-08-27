@@ -1,4 +1,5 @@
 use std::ops::Add;
+use std::time::Duration;
 use bevy::ecs::schedule::ShouldRun::No;
 use bevy::input::ButtonState;
 use bevy::input::keyboard::KeyboardInput;
@@ -49,10 +50,13 @@ impl Plugin for UiPlugin {
             .add_system(check_for_mixer_craft)
             .add_system(check_for_furnace_craft)
             .add_system(check_for_slicer_craft)
+            .add_system(detect_click_page_arrows)
+            .add_system(blinking_sprites)
             .add_system(test_system)
             //.add_system(on_drop_element.after(drag_item))
             .add_system_to_stage(CoreStage::PostUpdate, on_load_mixer)
             .add_system_to_stage(CoreStage::PostUpdate, on_load_slicer)
+            .add_system_to_stage(CoreStage::PostUpdate, on_failed_craft)
             .add_system_to_stage(CoreStage::PostUpdate, handle_slot_events)
             .add_system_to_stage(CoreStage::PostUpdate, hide_name)
             .add_system_to_stage(CoreStage::PostUpdate, show_name.after(hide_name))
@@ -107,7 +111,7 @@ pub struct PageUpEvent;
 #[derive(Debug)]
 pub struct PageDownEvent;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CraftType {
     SLICER,
     MIXER,
@@ -175,13 +179,17 @@ fn on_insert_element(
     }
 }
 
-fn on_page_up (
-    mut page_up_event : EventReader<PageUpEvent>,
-    mut ui_data : ResMut<UiData>
+fn on_failed_craft (
+    mut blinkers : Query<(&mut Blinking, &ToolBlinker), With<FailBlinker>>,
+    mut craft_fail_event: EventReader<CraftFailedEvent>
 ) {
-    if ui_data.can_move_up() {
-        ui_data.current_page -= 1;
-
+    for event in craft_fail_event.iter() {
+        println!("Craft Failed");
+        for (mut blinker, tool_blinker) in blinkers.iter_mut() {
+            if event.0 == tool_blinker.0 {
+                blinker.blinks = 2;
+            }
+        }
     }
 }
 
@@ -218,7 +226,9 @@ impl UiData {
     }
 
     pub fn unsafe_add(&mut self, element : Element) {
-        self.known_elements.push(element)
+        self.known_elements.push(element);
+        let element_amount = self.known_elements.len() as u32;
+        self.number_of_pages = ((element_amount - (element_amount % 12)) / 12) as u32
     }
 
     pub fn number_of_pages(&self) -> u32 {
@@ -312,6 +322,21 @@ pub struct PageUp;
 pub struct PageDown;
 
 #[derive(Component)]
+pub struct Clickable;
+
+#[derive(Component)]
+pub struct FailBlinker;
+
+#[derive(Component)]
+pub struct ToolBlinker(CraftType);
+
+#[derive(Component)]
+pub struct Blinking {
+    pub blinks: u32,
+    timer : Timer
+}
+
+#[derive(Component)]
 pub struct Slot {
     pub element : Option<Element>,
     pub index : u32,
@@ -362,6 +387,7 @@ impl Slot {
 //==================================================================================================
 
 fn test_system (
+    mut blinkers : Query<&mut Blinking>,
     keys: Res<Input<KeyCode>>,
     mut ui_data : ResMut<UiData>,
     mut slot_refresh : EventWriter<RefreshSlotsEvent>,
@@ -391,6 +417,70 @@ fn test_system (
     if keys.just_pressed(KeyCode::Up) {
         ui_data.current_page -= 1;
         slot_refresh.send(RefreshSlotsEvent);
+    }
+
+    if keys.just_pressed(KeyCode::B) {
+        for mut blinker in blinkers.iter_mut() {
+            blinker.blinks = 2;
+        }
+    }
+}
+
+fn blinking_sprites(
+    mut blinking_sprites_q : Query<(&mut Blinking, &mut Visibility)>,
+    time : Res<Time>
+) {
+    for (mut blinking, mut visibility) in blinking_sprites_q.iter_mut() {
+        if blinking.blinks > 0 {
+            blinking.timer.tick(time.delta());
+            if visibility.is_visible {
+                if blinking.timer.finished() {
+                    blinking.blinks -= 1;
+                    visibility.is_visible = false;
+                    blinking.timer.reset()
+                }
+            } else {
+                if blinking.timer.finished() {
+                    visibility.is_visible = true;
+                    blinking.timer.reset()
+                }
+            }
+        }
+    }
+}
+
+fn detect_click_page_arrows(
+    mut page_up_button : Query<(&Transform, &Sprite, &mut Visibility), (With<PageUp>, Without<PageDown>)>,
+    mut page_down_button : Query<(&Transform, &Sprite, &mut Visibility), (With<PageDown>, Without<PageUp>)>,
+    mut ui_data : ResMut<UiData>,
+    game_helper : Res<GameHelper>,
+    mouse : Res<Input<MouseButton>>,
+    mut refresh_slots_event : EventWriter<RefreshSlotsEvent>
+) {
+    let (up_button_transform, up_button_sprite, mut page_up_visibility) = page_up_button.single_mut();
+    let (down_button_transform, down_button_sprite, mut page_down_visibility) = page_down_button.single_mut();
+
+    let up_button_rect = Slot::generate_rect(up_button_transform, up_button_sprite);
+    let down_button_rect = Slot::generate_rect(down_button_transform, down_button_sprite);
+
+    if ui_data.can_move_up() {
+        page_up_visibility.is_visible = true;
+        if mouse.just_pressed(MouseButton::Left) && up_button_rect.is_within(game_helper.mouse_world_pos()) {
+            ui_data.current_page -= 1;
+            refresh_slots_event.send(RefreshSlotsEvent);
+        }
+    } else {
+        page_up_visibility.is_visible = false;
+    }
+
+    if ui_data.can_move_down() {
+        page_down_visibility.is_visible = true;
+        if mouse.just_pressed(MouseButton::Left) && down_button_rect.is_within(game_helper.mouse_world_pos()) {
+            ui_data.current_page += 1;
+            refresh_slots_event.send(RefreshSlotsEvent);
+        }
+    } else {
+        page_down_visibility.is_visible = false;
     }
 }
 
@@ -583,12 +673,15 @@ fn drag_item(
 
         if is_within && buttons.just_pressed(MouseButton::Right) && slot.element.is_some() && !slot.can_change {
             element_info_event.send(ElementInfoEvent(slot.element.as_ref().unwrap().clone()));
-            println!("INFO PLEASE!")
         }
 
-        if is_within && buttons.just_pressed(MouseButton::Left) && drag_info.currently_dragging.is_none() && slot.element.is_some() && !slot.can_change {
+        if is_within && buttons.just_pressed(MouseButton::Left) && drag_info.currently_dragging.is_none() && slot.element.is_some() {
             drag_info.currently_dragging = Some(slot.element.as_ref().unwrap().clone());
             drag_info.should_change_sprite = true;
+
+            if slot.can_change {
+                slot.element = None
+            }
         }
 
         if buttons.just_released(MouseButton::Left) && drag_info.currently_dragging.is_some() {
@@ -654,7 +747,6 @@ fn refresh_slots (
     if !refresh_event.is_empty() {
         for mut slot in slot_query.iter_mut() {
             let index = slot.index + ui_manager.current_page * 12;
-            println!("Current Page {}", ui_manager.current_page);
             let element = ui_manager.known_elements.get(index as usize);
             if let Some(element) = element {
                 slot.element = Some(element.to_owned());
@@ -718,7 +810,28 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
         transform: Transform::from_xyz(8.0, 88.0, TOP_LEVEL),
         visibility: Visibility { is_visible: false },
         ..default()
-    }).insert(Name::new("X"));
+    }).insert(Name::new("X_MIXER"))
+        .insert(Blinking{blinks: 0, timer : Timer::new(Duration::from_secs_f32(0.1), false)})
+        .insert(ToolBlinker(CraftType::MIXER))
+        .insert(FailBlinker);
+
+    crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png",45, 28, SpriteBundle {
+        transform: Transform::from_xyz(8.0, 278.0, TOP_LEVEL),
+        visibility: Visibility { is_visible: false },
+        ..default()
+    }).insert(Name::new("X_SLICER"))
+        .insert(Blinking{blinks: 0, timer : Timer::new(Duration::from_secs_f32(0.1), false)})
+        .insert(ToolBlinker(CraftType::SLICER))
+        .insert(FailBlinker);
+
+    crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png",45, 28, SpriteBundle {
+        transform: Transform::from_xyz(8.0, -132.0, TOP_LEVEL),
+        visibility: Visibility { is_visible: false },
+        ..default()
+    }).insert(Name::new("X_FURNACE"))
+        .insert(Blinking{blinks: 0, timer : Timer::new(Duration::from_secs_f32(0.1), false)})
+        .insert(ToolBlinker(CraftType::FURNACE))
+        .insert(FailBlinker);
 
     crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/page_down.png", 9, 9, SpriteBundle{
         transform: Transform::from_xyz(-188.0, -284.0, TOP_LEVEL),
