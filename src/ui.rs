@@ -835,12 +835,12 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
         .insert(FailBlinker);
 
     crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/page_down.png", 9, 9, SpriteBundle{
-        transform: Transform::from_xyz(-188.0, -284.0, TOP_LEVEL),
+        transform: Transform::from_xyz(-180.0, -276.0, TOP_LEVEL),
         ..default()
     }).insert(Name::new("Page Down")).insert(PageDown);
 
     crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/page_up.png", 9, 9, SpriteBundle{
-        transform: Transform::from_xyz(-188.0, 300.0, TOP_LEVEL),
+        transform: Transform::from_xyz(-180.0, 292.0, TOP_LEVEL),
         ..default()
     }).insert(Name::new("Page Up")).insert(PageUp);
 }

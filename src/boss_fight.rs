@@ -6,7 +6,7 @@ pub struct BossFightPlugin;
 
 impl Plugin for BossFightPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup_boss_fight);
+        //app.add_startup_system(setup_boss_fight);
     }
 }
 
