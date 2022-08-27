@@ -15,7 +15,9 @@ impl Plugin for GamePlugin {
             .init_resource::<Game>()
             .add_startup_system(create_npcs)
             .add_startup_system(setup_elements)
+            .add_startup_system(setup_crafting_tables)
             .add_system_to_stage(CoreStage::PostUpdate, check_if_quest_completed)
+            .add_system(make_visible)
             .add_system(give_next_quest);
     }
 }
@@ -30,6 +32,9 @@ pub enum GameStatus {
 pub struct Game {
     npcs: Vec<Entity>,
     pub pages: Vec<Entity>,
+    pub slicer_ent: Option<Entity>,
+    pub mixer_ent: Option<Entity>,
+    pub furnace_ent: Option<Entity>,
     pub npc: NpcKind,
     pub status: GameStatus,
 }
@@ -39,6 +44,9 @@ impl Default for Game {
         Game {
             npcs: vec![],
             pages: vec![],
+            slicer_ent: None,
+            mixer_ent: None,
+            furnace_ent: None,
             npc: NpcKind::Squee,
             status: GameStatus::QuestComplete,
         }
@@ -54,6 +62,72 @@ impl Game {
         }
         self.npcs[i]
     }
+}
+
+#[derive(Component)]
+struct MakeVisible;
+
+fn make_visible(
+    mut query: Query<(Entity, &mut Visibility), With<MakeVisible>>,
+    mut commands: Commands,
+) {
+    for (entity, mut visability) in &mut query {
+        visability.is_visible = true;
+        commands.entity(entity).remove::<MakeVisible>();
+    }
+}
+
+fn setup_crafting_tables(
+    mut commands: Commands,
+    mut game: ResMut<Game>,
+    asset_server: Res<AssetServer>,
+) {
+    let slicer = commands.spawn_bundle(SpriteBundle {
+        sprite: Sprite {
+            custom_size: Some(Vec2::splat(16. * 8.)),
+            ..default()
+        },
+        transform: Transform::from_xyz(0., 264., 0.),
+        texture: asset_server.load("sprites/slicer.png"),
+        visibility: Visibility {
+            is_visible: false
+        },
+        ..default()
+    })
+        .insert(Name::new("Slicer"))
+        .id();
+
+    let furnace = commands.spawn_bundle(SpriteBundle {
+        sprite: Sprite {
+            custom_size: Some(Vec2::new(16. * 8., 32. * 8.)),
+            ..default()
+        },
+        transform: Transform::from_xyz(0., -152., 0.),
+        texture: asset_server.load("sprites/furnace.png"),
+        // visibility: Default::default(),
+        ..default()
+    })
+        .insert(Name::new("Furnace"))
+        .id();
+
+    let mixer = commands.spawn_bundle(SpriteBundle {
+        sprite: Sprite {
+            custom_size: Some(Vec2::new(32. * 8., 16. * 8.)),
+            ..default()
+        },
+        transform: Transform::from_xyz(0., 88., 0.),
+        texture: asset_server.load("sprites/mixer.png"),
+        visibility: Visibility {
+            is_visible: false
+        },
+        ..default()
+    })
+        .insert(Name::new("Mixer"))
+        .id();
+
+    game.furnace_ent = Some(furnace);
+    game.mixer_ent = Some(mixer);
+    game.slicer_ent = Some(slicer);
 }
 
 fn setup_elements(
@@ -105,7 +179,7 @@ pub fn give_next_quest(mut commands: Commands, mut game: ResMut<Game>, mut quest
         game.status = GameStatus::QuestInProgress;
 
         // update next quest
-        if let Some(q) =quest_iter.next() {
+        if let Some(q) = quest_iter.next() {
             *current_quest = q;
         }
         //println!("\nNEW QUEST: {:?}", *current_quest);
@@ -157,6 +231,7 @@ pub fn give_next_quest(mut commands: Commands, mut game: ResMut<Game>, mut quest
 }
 
 fn check_if_quest_completed(
+    mut commands: Commands,
     mut current_quest: Res<Quest<'static>>,
     mut game: ResMut<Game>,
     mut combine_event: EventReader<ElementCraftedEvent>,
@@ -173,7 +248,7 @@ fn check_if_quest_completed(
                 NpcKind::Squee => {
                     game.npc = NpcKind::Squee;
                     println!("change npc to squee");
-                },
+                }
                 NpcKind::Conrad => {
                     game.npc = NpcKind::Conrad;
                     println!("change npc to conrad");
@@ -184,9 +259,11 @@ fn check_if_quest_completed(
                 match craft {
                     CraftingTable::Mixer => {
                         mixer_unlock.send(LoadMixerEvent);
+                        commands.entity(game.mixer_ent.unwrap()).insert(MakeVisible);
                     }
                     CraftingTable::Slicer => {
                         slicer_unlock.send(LoadSlicerEvent);
+                        commands.entity(game.slicer_ent.unwrap()).insert(MakeVisible);
                     }
                     CraftingTable::Furnace => {
                         // default unlocked
