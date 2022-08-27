@@ -654,7 +654,7 @@ fn drag_item(
 
     for (mut slot, transform, sprite) in slot_query.iter_mut() {
         let rect = Slot::generate_rect(transform, sprite);
-        rect.draw_rect(&mut lines, Color::RED);
+        // rect.draw_rect(&mut lines, Color::RED);
         //draw_box(&mut lines, transform.translation, width, height, Color::RED);
 
         let is_within = rect.is_within(game_helper.mouse_world_pos());
@@ -780,7 +780,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
         .insert(Name::new("Drag Entity"));
 
     commands.spawn_bundle(SpriteBundle {
-        texture: asset_server.load("sprites/proto_kitchen_bg2.png"),
+        texture: asset_server.load("sprites/kitchen_bg.png"),
         transform: Transform::from_xyz(0.0, 0.0, UI_LEVEL),
         ..default()
     });
@@ -794,7 +794,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
 
     commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("Test", text_style),
-        transform: Transform::from_xyz(-606.0, -292.0, TEXT_LEVEL),
+        transform: Transform::from_xyz(-566.0, -292.0, TEXT_LEVEL),
         text_2d_size : Text2dSize {
             size: Vec2::new(256.0, 128.0)
         },
