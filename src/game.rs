@@ -149,6 +149,11 @@ fn create_npcs(mut commands: Commands, asset_server: Res<AssetServer>, mut game:
                 name: "Squee the Thumbless".to_string(),
                 sprite: asset_server.load("sprites/squee.png"),
                 sprite_path: "sprites/squee.png".to_string(),
+                talking_anims: vec![
+                    asset_server.load("sprites/squee_talk1.png"),
+                    asset_server.load("sprites/squee_talk2.png"),
+                ],
+                talking_index: 0,
                 // voice: asset_server.load("voice/goblin_voice.png"),
             }
         )
@@ -163,6 +168,10 @@ fn create_npcs(mut commands: Commands, asset_server: Res<AssetServer>, mut game:
                 name: "Sir Conrad".to_string(),
                 sprite: asset_server.load("sprites/knight.png"),
                 sprite_path: "sprites/knight.png".to_string(),
+                talking_anims: vec![
+
+                ],
+                talking_index: 0,
             }
         )
         .insert(Name::new("Sir Conrad Entity"))

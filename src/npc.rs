@@ -26,12 +26,18 @@ pub struct Npc {
     pub name: String,
     pub sprite: Handle<Image>,
     pub sprite_path: String,
+    pub talking_anims: Vec<Handle<Image>>,
+    pub talking_index: usize,
     // pub color: Color,
     // pub voice: Handle<Audio>,
 }
 
 impl Npc {
-    pub const GOBLIN_NPC: &'static str = "sprites/goblin.png";
+    pub fn talk_frame(&mut self) -> usize {
+        self.talking_index += 1;
+        let i = &self.talking_index % 2;
+        return i
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -140,7 +146,7 @@ fn setup_dialogue(
 
     commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("", text_style).with_alignment(text_alignment),
-        transform: Transform::from_xyz(206.5, 290., NPC_LEVEL),
+        transform: Transform::from_xyz(206.5, 280., NPC_LEVEL),
         text_2d_bounds: Text2dBounds {
             size: Vec2::new(400., 4000.,)
         },
@@ -152,13 +158,13 @@ fn setup_dialogue(
 
 fn dialogue(
     mut commands: Commands,
-    mut query: Query<(Entity, &Npc, &mut Say)>,
+    mut query: Query<(Entity, &mut Npc, &mut Say)>,
     mut query_text: Query<&mut Text, With<NpcText>>,
     mut query_sprite: Query<(&mut Handle<Image>, &mut Sprite),  With<NpcSprite>>,
     time: Res<Time>,
     // audio: Res<Audio>
 ) {
-    if let Ok((entity, npc, mut say)) = query.get_single_mut() {
+    if let Ok((entity, mut npc, mut say)) = query.get_single_mut() {
         if let Ok(mut text) = query_text.get_single_mut() {
             if let Ok((mut sprite_handle, mut sprite)) = query_sprite.get_single_mut() {
                 if say.i == 0 {
@@ -184,22 +190,31 @@ fn dialogue(
 
                 }
 
-                //set text color ?
-
                 // compute the new i
                 let now = time.seconds_since_startup();
                 let mut new_i = say.compute_i(now);
                 // if we finished
                 if say.i >= say.text.len() {
                     // and 1 sec has passed
+
                     if now - say.duration - say.start > 1. {
                         commands.entity(entity).remove::<Say>();
+
+                        // change sprite back to default sprite
+                        *sprite_handle = npc.sprite.clone();
                     }
                 }
                 // if not finished
                 else if new_i != say.i {
                     // there's new characters to say
                     new_i = new_i.min(say.text.len());
+
+                    // sprite talking animation
+                    if new_i % 6 == 0 {
+                        let frame = npc.talk_frame();
+                        *sprite_handle = npc.talking_anims[frame].clone();
+                    }
+
                     // magic line that updates the code by making the old text box equal to the new
                     // sliced text box
                     text.sections[0].value = say.text[0..new_i].to_string();
@@ -212,4 +227,14 @@ fn dialogue(
             }
         }
     }
+}
+
+fn talk_animation(
+    // mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut query: Query<(Entity, &mut Handle<Image>, &Npc), With<Say>>
+) {
+    // if let Some((sprite, npc)) = query.get_single_mut() {
+    //
+    // }
 }
