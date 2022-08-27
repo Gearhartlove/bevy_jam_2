@@ -31,8 +31,10 @@ impl Element {
     pub const SIREN_SEAWEED: Element = Element::new("Siren Seaweed", "siren_seaweed", "The name is misleading, this isnt seaweed harvested from sirens. No, just around where they are. Cant help but like em!");
     pub const DICED_CROUTONS: Element = Element::new("Diced Croutons", "diced_croutons", "Youre on a roll! After these croutons youll be in para-dice.");
     pub const RANCH: Element = Element::new("Ranch", "ranch", "Ranch ironically made off of a ranch. Creamy and delicious, why not smother it of everything?");
+    pub const MAYO: Element = Element::new("Mayo", "mayo", "A creamy spread made by whipping two eggs together. A classic addition for sammys!");
     pub const SALAD_TOPPING: Element = Element::new("Salad Topping", "salad_topping", "A mixture of the croutons and the ranch. If only you had something to put this on...");
     pub const SALAD: Element = Element::new("Salad", "salad", "A (sorta) healthy and tasty meal! Wilbur is sure to love this.");
+
 
     //Stage 4
     pub const SCRAMBLED_EGG : Element = Element::new("Scrambled Egg", "scrambled_egg", "Nice and fluffy egg, cooked an scrambled to perfect. Perfect for a hearty breakfast sandwich.");
