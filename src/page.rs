@@ -59,7 +59,7 @@ fn close_info(keys: Res<Input<KeyCode>>, game: Res<Game>, mut commands: Commands
 }
 
 #[derive(Component)]
-struct MovingTo(Transform);
+pub struct MovingTo(pub Transform);
 
 pub const SIZE: u32 = 64;
 
@@ -119,7 +119,7 @@ fn setup(mut game: ResMut<Game>, mut commands: Commands, asset_server: Res<Asset
             custom_size: Some(Vec2::new(16. * 8., 16. * 8.)),
             ..default()
         },
-        transform: Transform::from_xyz(0., 152., UI_LEVEL + 5.),
+        transform: Transform::from_xyz(0., 152., 0.0),
         texture: asset_server.load("sprites/empty.png"),
         ..default()
     })
@@ -148,7 +148,7 @@ fn setup(mut game: ResMut<Game>, mut commands: Commands, asset_server: Res<Asset
 
     let title = commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("", title_style).with_alignment(title_alignment),
-        transform: Transform::from_xyz(0., 42.5, TEXT_LEVEL),
+        transform: Transform::from_xyz(0., 42.5, 1.0),
         ..default()
     })
         .insert(PageTitle)
@@ -157,7 +157,7 @@ fn setup(mut game: ResMut<Game>, mut commands: Commands, asset_server: Res<Asset
 
     let text = commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("", text_style).with_alignment(text_alignment),
-        transform: Transform::from_xyz(-119.7, -1.5, TEXT_LEVEL),
+        transform: Transform::from_xyz(-119.7, -1.5, 1.0),
         text_2d_bounds: Text2dBounds {
             size: Vec2::new(282., 100.),
         },

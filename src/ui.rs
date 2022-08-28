@@ -122,7 +122,7 @@ pub enum CraftType {
 }
 
 pub fn handle_slot_events (
-    mut slot_query : Query<(&mut Slot, &Transform, &Sprite)>,
+    mut slot_query : Query<(&mut Slot, &GlobalTransform, &Sprite)>,
     mut element_drop_event : EventReader<DropElementEvent>,
     mut update_slot_event : EventReader<UpdateSlotEvent>
 ) {
@@ -262,6 +262,7 @@ impl Default for UiData {
 //                          Rect
 //==================================================================================================
 
+#[derive(Clone)]
 pub struct Rect {
     pub x1 : f32,
     pub y1 : f32,
@@ -283,6 +284,21 @@ impl Rect {
         let point2 = Vec3::new(self.x2, self.y1, 0.0);
         let point3 = Vec3::new(self.x1, self.y2, 0.0);
         let point4 = Vec3::new(self.x2, self.y2, 0.0);
+        lines.line_colored(point1, point2, 0.0, color);
+        lines.line_colored(point2, point4, 0.0, color);
+        lines.line_colored(point4, point3, 0.0, color);
+        lines.line_colored(point3, point1, 0.0, color);
+    }
+
+    pub fn is_within_with_offset(&self, point : Vec2, offset : Vec2) -> bool {
+        (self.x1 + offset.x) <= point.x && (self.x2 + offset.x) >= point.x && (self.y1 + offset.y) >= point.y && (self.y2 + offset.y) <= point.y
+    }
+
+    pub fn draw_rect_with_offset(&self, lines : &mut ResMut<DebugLines>, color : Color, offset : Vec2) {
+        let point1 = Vec3::new(self.x1 + offset.x, self.y1 + offset.y, 0.0);
+        let point2 = Vec3::new(self.x2 + offset.x, self.y1 + offset.y, 0.0);
+        let point3 = Vec3::new(self.x1 + offset.x, self.y2 + offset.y, 0.0);
+        let point4 = Vec3::new(self.x2 + offset.x, self.y2 + offset.y, 0.0);
         lines.line_colored(point1, point2, 0.0, color);
         lines.line_colored(point2, point4, 0.0, color);
         lines.line_colored(point4, point3, 0.0, color);
@@ -353,6 +369,14 @@ impl Slot {
             ..default()
         }
     }
+
+    pub fn with_index_changable(index : u32) -> Slot {
+        Slot {
+            index,
+            can_change : true,
+            ..default()
+        }
+    }
 }
 
 impl Default for Slot {
@@ -366,20 +390,20 @@ impl Default for Slot {
 }
 
 impl Slot {
-    pub fn generate_rect(transform : &Transform, sprite : &Sprite) -> Rect {
+    pub fn generate_rect(transform : &GlobalTransform, sprite : &Sprite) -> Rect {
         if let Some(size) = sprite.custom_size {
             Rect::new(
-                transform.translation.x - size.x/2.0,
-                transform.translation.y + size.y/2.0,
-                transform.translation.x + size.x/2.0,
-                transform.translation.y - size.y/2.0,
+                transform.translation().x - size.x/2.0,
+                transform.translation().y + size.y/2.0,
+                transform.translation().x + size.x/2.0,
+                transform.translation().y - size.y/2.0,
             )
         } else {
             Rect::new(
-                transform.translation.x - 8.0,
-                transform.translation.y + 8.0,
-                transform.translation.x + 8.0,
-                transform.translation.y - 8.0,
+                transform.translation().x - 8.0,
+                transform.translation().y + 8.0,
+                transform.translation().x + 8.0,
+                transform.translation().y - 8.0,
             )
         }
     }
@@ -453,8 +477,8 @@ fn blinking_sprites(
 }
 
 fn detect_click_page_arrows(
-    mut page_up_button : Query<(&Transform, &Sprite, &mut Visibility), (With<PageUp>, Without<PageDown>)>,
-    mut page_down_button : Query<(&Transform, &Sprite, &mut Visibility), (With<PageDown>, Without<PageUp>)>,
+    mut page_up_button : Query<(&GlobalTransform, &Sprite, &mut Visibility), (With<PageUp>, Without<PageDown>)>,
+    mut page_down_button : Query<(&GlobalTransform, &Sprite, &mut Visibility), (With<PageDown>, Without<PageUp>)>,
     mut ui_data : ResMut<UiData>,
     game_helper : Res<GameHelper>,
     mouse : Res<Input<MouseButton>>,
@@ -642,7 +666,7 @@ fn render_dragging (
 }
 
 fn drag_item(
-    mut slot_query : Query<(&mut Slot, &Transform, &Sprite)>,
+    mut slot_query : Query<(&mut Slot, &GlobalTransform, &Sprite)>,
     buttons: Res<Input<MouseButton>>,
     mut lines : ResMut<DebugLines>,
     game_helper : Res<GameHelper>,
@@ -656,7 +680,7 @@ fn drag_item(
 
     for (mut slot, transform, sprite) in slot_query.iter_mut() {
         let rect = Slot::generate_rect(transform, sprite);
-        // rect.draw_rect(&mut lines, Color::RED);
+        rect.draw_rect(&mut lines, Color::RED);
         //draw_box(&mut lines, transform.translation, width, height, Color::RED);
 
         let is_within = rect.is_within(game_helper.mouse_world_pos());
@@ -700,7 +724,7 @@ fn drag_item(
 }
 
 pub fn on_drop_element(
-    mut slot_query : Query<(&mut Slot, &Transform, &Sprite)>,
+    mut slot_query : Query<(&mut Slot, &GlobalTransform, &Sprite)>,
     mut element_drop_event : EventReader<DropElementEvent>
 ) {
     for event in element_drop_event.iter() {
