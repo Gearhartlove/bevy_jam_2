@@ -47,7 +47,7 @@ fn main() {
         .add_plugin(RegistryPlugin)
         .add_plugin(HelperPlugin)
         .add_plugin(UiPlugin)
-        // .add_plugin(WorldInspectorPlugin::new()) // debugging window
+        .add_plugin(WorldInspectorPlugin::new()) // debugging window
         .add_plugin(QuestPlugin)
         .add_plugin(NpcPlugin)
         .add_plugin(PagePlugin)

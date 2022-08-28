@@ -856,6 +856,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
 
     add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png",45, 28, SpriteBundle {
         transform: Transform::from_xyz(8.0, 278.0, TOP_LEVEL),
+
         visibility: Visibility { is_visible: false },
         ..default()
     }).insert(Name::new("X_SLICER"))
