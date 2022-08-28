@@ -19,13 +19,15 @@ impl MixerRecipe {
     pub const MAYO: MixerRecipe = MixerRecipe::new(Element::GRIFFON_EGG, Element::GRIFFON_EGG, Element::MAYO);
     pub const RANCH: MixerRecipe = MixerRecipe::new(Element::MAYO, Element::LEGEND_DAIRY, Element::RANCH);
     pub const SALAD_TOPPING: MixerRecipe = MixerRecipe::new(Element::DICED_CROUTONS, Element::RANCH, Element::SALAD_TOPPING);
-    pub const SALAD: MixerRecipe = MixerRecipe::new(Element::SIREN_SEAWEED, Element::RANCH, Element::SALAD);
+    pub const SALAD: MixerRecipe = MixerRecipe::new(Element::SIREN_SEAWEED, Element::SALAD_TOPPING, Element::SALAD);
     pub const SPICY_SPREAD: MixerRecipe = MixerRecipe::new(Element::MAYO, Element::PEPPER_FLAKES, Element::SPICY_SPREAD);
     pub const SPICY_TOAST: MixerRecipe = MixerRecipe::new(Element::SPICY_SPREAD, Element::ELVEN_TOAST, Element::SPICY_TOAST);
+    pub const SANDWICH_FILLING: MixerRecipe = MixerRecipe::new(Element::SCRAMBLED_EGG, Element::BACON, Element::SANDWICH_FILLINGS);
+    pub const SANDWICH: MixerRecipe = MixerRecipe::new(Element::SANDWICH_FILLINGS, Element::SPICY_TOAST, Element::SANDWICH);
     pub const COOKED_PORK: MixerRecipe = MixerRecipe::new(Element::RAW_PORK, Element::BOILING_WATER, Element::COOKED_PORK);
     pub const HARD_BOILED_EGG: MixerRecipe = MixerRecipe::new(Element::GRIFFON_EGG, Element::BOILING_WATER, Element::HARD_BOILED_EGG);
 
-    pub const RECIPES: [MixerRecipe; 11] = [
+    pub const RECIPES: [MixerRecipe; 13] = [
         MixerRecipe::UTTER_ICE_CREAM,
         MixerRecipe::BREAD_DOUGH,
         MixerRecipe::ICE_CREAM_SANDWICH,
@@ -35,7 +37,9 @@ impl MixerRecipe {
         MixerRecipe::SALAD,
         MixerRecipe::SPICY_SPREAD,
         MixerRecipe::SPICY_TOAST,
+        MixerRecipe::SANDWICH,
         MixerRecipe::COOKED_PORK,
+        MixerRecipe::SANDWICH_FILLING,
         MixerRecipe::HARD_BOILED_EGG
     ];
 

@@ -12,7 +12,6 @@ use bevy::render::render_resource::Texture;
 use bevy::text::Text2dSize;
 use bevy::utils::tracing::event;
 use bevy_prototype_debug_lines::DebugLines;
-use bevy_rapier2d::prelude::Collider;
 use crate::element::Element;
 use crate::{GameHelper, MixerRecipeIden};
 use crate::game::GameManager;
