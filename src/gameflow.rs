@@ -50,8 +50,8 @@ fn update_gameflow(
         for event in on_npc_click.iter() {
             current.on_npc_click(&game, &mut commands);
         }
-        for event in on_item_craft {
-            current.on_item_crafted()
+        for event in on_item_craft.iter() {
+            current.on_item_crafted(&mut commands, event.0.clone());
         }
     }
 }
@@ -81,8 +81,14 @@ impl Default for Gameflow {
 
         game_flow
             // chapter 1
-            .add_segment(SqueeHelloPlayer::default())
-            .add_segment(SqueeTutorialCrafting::default());
+            .add_segment(NpcDialogueSegment::new(
+                vec![
+                    "one".to_string(),
+                    "two".to_string(),
+                    "three".to_string(),
+                ]
+            ));
+            // .add_segment(SqueeTutorialCrafting::default());
 
         return game_flow;
     }
@@ -109,9 +115,9 @@ trait Segment {
 
     fn on_segment_start(
         &mut self,
-        mut commands: &mut Commands,
+        commands: &mut Commands,
         asset_server: &Res<AssetServer>,
-        mut game: &mut ResMut<GameManager>,
+        game: &mut ResMut<GameManager>,
     );
 
     fn on_segment_end(&self) {}
@@ -120,12 +126,19 @@ trait Segment {
 // ################################################################################################################################################
 // SqueeHelloPlayer
 // ################################################################################################################################################
-struct SqueeHelloPlayer {
+struct NpcDialogueSegment {
     phrases: Vec<String>,
     phrase_index: usize,
 }
 
-impl SqueeHelloPlayer {
+impl NpcDialogueSegment {
+    pub fn new(vec: Vec<String>) -> Self {
+        Self {
+            phrases: vec,
+            phrase_index: 0,
+        }
+    }
+
     pub fn get_next_phrase(&mut self) -> String {
         self.phrase_index += 1;
         println!("index: {}", self.phrase_index);
@@ -138,9 +151,9 @@ impl SqueeHelloPlayer {
     }
 }
 
-impl Default for SqueeHelloPlayer {
+impl Default for NpcDialogueSegment {
     fn default() -> Self {
-        SqueeHelloPlayer {
+        NpcDialogueSegment {
             phrases: vec![
                 "Yo wassup!".to_string(),
                 "Nice Job clicking me!".to_string(),
@@ -153,7 +166,7 @@ impl Default for SqueeHelloPlayer {
     }
 }
 
-impl Segment for SqueeHelloPlayer {
+impl Segment for NpcDialogueSegment {
     fn is_complete(&self) -> bool {
         self.phrase_index == (self.phrases.len() + 1)
     }
@@ -244,26 +257,26 @@ impl Segment for SqueeHelloPlayer {
 // ################################################################################################################################################
 // SqueeCraftingTutorial
 // ################################################################################################################################################
-struct SqueeTutorialCrafting {
-
-}
-
-impl Default for SqueeTutorialCrafting {
-    fn default() -> Self {
-        todo!()
-    }
-}
-
-impl Segment for SqueeTutorialCrafting {
-    fn is_complete(&self) -> bool {
-        todo!()
-    }
-
-    fn on_item_crafted(&self, commands: &mut Commands, element: Element) {
-
-    }
-
-    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>) {
-        todo!()
-    }
-}
+// struct SqueeTutorialCrafting {
+//
+// }
+//
+// impl Default for SqueeTutorialCrafting {
+//     fn default() -> Self {
+//         todo!()
+//     }
+// }
+//
+// impl Segment for SqueeTutorialCrafting {
+//     fn is_complete(&self) -> bool {
+//         todo!()
+//     }
+//
+//     fn on_item_crafted(&self, commands: &mut Commands, element: Element) {
+//
+//     }
+//
+//     fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>) {
+//         todo!()
+//     }
+// }
