@@ -656,8 +656,8 @@ fn drag_item(
 
     for (mut slot, transform, sprite) in slot_query.iter_mut() {
         let rect = Slot::generate_rect(transform, sprite);
-        // rect.draw_rect(&mut lines, Color::RED);
-        //draw_box(&mut lines, transform.translation, width, height, Color::RED);
+        rect.draw_rect(&mut lines, Color::RED);
+        // draw_box(&mut lines, transform.translation, width, height, Color::RED);
 
         let is_within = rect.is_within(game_helper.mouse_world_pos());
         if is_within {

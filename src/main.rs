@@ -10,6 +10,7 @@ mod npc;
 mod game;
 mod page;
 mod boss_fight;
+mod gameflow;
 
 use bevy::prelude::*;
 use bevy::render::texture::ImageSettings;
@@ -20,6 +21,7 @@ use crate::ui::UiPlugin;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
 use crate::boss_fight::BossFightPlugin;
 use crate::game::GamePlugin;
+use crate::gameflow::GameflowPlugin;
 use crate::helper::{GameHelper, HelperPlugin};
 use crate::npc::NpcPlugin;
 use crate::page::PagePlugin;
@@ -43,11 +45,12 @@ fn main() {
         .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
         .add_plugin(DebugLinesPlugin::default())
-        .add_plugin(GamePlugin)
+        // .add_plugin(GamePlugin)
+        .add_plugin(GameflowPlugin)
         .add_plugin(RegistryPlugin)
         .add_plugin(HelperPlugin)
         .add_plugin(UiPlugin)
-        // .add_plugin(WorldInspectorPlugin::new()) // debugging window
+        .add_plugin(WorldInspectorPlugin::new()) // debugging window
         .add_plugin(QuestPlugin)
         .add_plugin(NpcPlugin)
         .add_plugin(PagePlugin)
