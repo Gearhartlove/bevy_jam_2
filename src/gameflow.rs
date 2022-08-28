@@ -4,7 +4,7 @@ use bevy::utils::HashMap;
 use crate::element::Element;
 use crate::game::GameManager;
 use crate::npc::{Npc, NpcClickEvent, NpcKind, NpcSprite, NpcText, Say};
-use crate::ui::{ElementCraftedEvent, NPC_LEVEL};
+use crate::ui::{ElementCraftedEvent, InsertElementEvent, NPC_LEVEL};
 
 pub struct GameflowPlugin;
 
@@ -18,43 +18,9 @@ impl Plugin for GameflowPlugin {
     }
 }
 
-fn start_gameflow(
-    mut gameflow: ResMut<Gameflow>,
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut game: ResMut<GameManager>,
-) {
-    let i = gameflow.current as usize;
-    let current = gameflow.segments.get_mut(i).unwrap();
-    current.on_segment_start(&mut commands, &asset_server, &mut game);
-}
-
-fn update_gameflow(
-    mut gameflow: ResMut<Gameflow>,
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut game: ResMut<GameManager>,
-    mut on_npc_click: EventReader<NpcClickEvent>,
-    mut on_item_craft: EventReader<ElementCraftedEvent>,
-) {
-    let i = gameflow.current as usize;
-    let mut current = gameflow.segments.get_mut(i).unwrap();
-    if current.is_complete() {
-        current.on_segment_end();
-        gameflow.advance();
-        let i = gameflow.current as usize;
-        let current = gameflow.segments.get_mut(i).unwrap();
-        current.on_segment_start(&mut commands, &asset_server, &mut game);
-    } else {
-        // npc clicking
-        for event in on_npc_click.iter() {
-            current.on_npc_click(&game, &mut commands);
-        }
-        for event in on_item_craft.iter() {
-            current.on_item_crafted(&mut commands, &mut game, event.0.clone());
-        }
-    }
-}
+//==================================================================================================
+//                  GameFlow
+//==================================================================================================
 
 pub struct Gameflow {
     segments: Vec<Box<dyn Segment + Send + Sync>>,
@@ -69,6 +35,65 @@ impl Gameflow {
 
     pub fn advance(&mut self) {
         self.current += 1;
+    }
+}
+
+pub struct EventCaller {
+    pub insert_element_event : Option<InsertElementEvent>
+}
+
+impl Default for EventCaller {
+    fn default() -> Self {
+        EventCaller {
+            insert_element_event : None
+        }
+    }
+}
+
+fn start_gameflow(
+    mut gameflow: ResMut<Gameflow>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut game: ResMut<GameManager>,
+) {
+    let i = gameflow.current as usize;
+    let current = gameflow.segments.get_mut(i).unwrap();
+    current.on_segment_start(&mut commands, &asset_server, &mut game, &mut EventCaller::default());
+}
+
+fn update_gameflow(
+    mut gameflow: ResMut<Gameflow>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut game: ResMut<GameManager>,
+
+    //Events Listeners
+    mut on_npc_click: EventReader<NpcClickEvent>,
+    mut on_item_craft: EventReader<ElementCraftedEvent>,
+
+    //Event Writers
+    mut insert_element_event : EventWriter<InsertElementEvent>,
+) {
+    let i = gameflow.current as usize;
+    let mut current = gameflow.segments.get_mut(i).unwrap();
+    let mut event_caller = EventCaller::default();
+
+    for event in on_npc_click.iter() {
+        current.on_npc_click(&mut commands, &asset_server, &mut game, &mut event_caller);
+    }
+
+    for event in on_item_craft.iter() {
+        current.on_item_crafted(&mut commands, &asset_server, &mut game, &mut event_caller, event.0.clone());
+    }
+
+    if current.is_complete() {
+        current.on_segment_end(&mut commands, &asset_server, &mut game, &mut event_caller);
+        gameflow.advance();
+
+    }
+
+    if let Some(event) = event_caller.insert_element_event {
+        insert_element_event.send(event)
     }
 }
 
@@ -118,27 +143,45 @@ trait Segment {
 
     fn on_item_crafted(
         &mut self,
-        mut commands: &mut Commands,
+        commands: &mut Commands,
+        asset_server: &Res<AssetServer>,
         game: &mut ResMut<GameManager>,
-        element: Element,
+        event_caller : &mut EventCaller,
+        element : Element
     ) {}
 
     fn on_npc_click(
         &mut self,
-        game: &ResMut<GameManager>,
-        mut commands: &mut Commands,
+        commands: &mut Commands,
+        asset_server: &Res<AssetServer>,
+        game: &mut ResMut<GameManager>,
+        event_caller : &mut EventCaller
     ) {}
 
-    fn on_npc_drop(&self) {}
+    fn on_npc_drop(
+        &mut self,
+        commands: &mut Commands,
+        asset_server: &Res<AssetServer>,
+        game: &mut ResMut<GameManager>,
+        event_caller : &mut EventCaller,
+        element : Element
+    ) {}
 
     fn on_segment_start(
         &mut self,
         commands: &mut Commands,
         asset_server: &Res<AssetServer>,
         game: &mut ResMut<GameManager>,
+        event_caller : &mut EventCaller
     ) {}
 
-    fn on_segment_end(&self) {}
+    fn on_segment_end(
+        &mut self,
+        commands: &mut Commands,
+        asset_server: &Res<AssetServer>,
+        game: &mut ResMut<GameManager>,
+        event_caller : &mut EventCaller
+    ) {}
 }
 
 // ################################################################################################################################################
@@ -177,84 +220,13 @@ impl Segment for NpcDialogueSegment {
 
     fn on_npc_click(
         &mut self,
-        game: &ResMut<GameManager>,
-        mut commands: &mut Commands,
+        commands: &mut Commands,
+        asset_server: &Res<AssetServer>,
+        game: &mut ResMut<GameManager>,
+        event_caller : &mut EventCaller
     ) {
         let text = self.get_next_phrase();
-        commands.entity(game.get_npc()).insert(Say::new(
-            text
-        ));
-    }
-
-    fn on_segment_start(
-        &mut self,
-        mut commands: &mut Commands,
-        asset_server: &Res<AssetServer>,
-        mut game: &mut ResMut<GameManager>,
-    ) {
-        let squee_entity = commands
-            .spawn()
-            .insert(
-                Npc {
-                    kind: NpcKind::Squee,
-                    name: "Squee the Thumbless".to_string(),
-                    sprite: asset_server.load("sprites/squee.png"),
-                    sprite_path: "sprites/squee.png".to_string(),
-                    talking_anims: vec![
-                        asset_server.load("sprites/squee_talk1.png"),
-                        asset_server.load("sprites/squee_talk2.png"),
-                    ],
-                    talking_index: 0,
-                }
-            )
-            .insert(Name::new("Squeoooooe Entity"))
-            .id();
-
-        // npc
-        commands.spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(28. * 8., 38. * 8.)),
-                ..default()
-            },
-            transform: Transform::from_xyz(384., 136., NPC_LEVEL),
-            texture: asset_server.load("sprites/squee.png"),
-            ..default()
-        })
-            .insert(NpcSprite)
-            .insert(Name::new("NpcSprite"));
-
-        // text bubble
-        let font = asset_server.load("fonts/pixel_font.ttf");
-        // todo: change
-        let text_style = TextStyle {
-            font,
-            font_size: 20.,
-            color: Color::WHITE,
-        };
-        let text_alignment = TextAlignment {
-            vertical: VerticalAlign::Top,
-            horizontal: HorizontalAlign::Left,
-        };
-
-        commands.spawn_bundle(Text2dBundle {
-            text: Text::from_section("", text_style).with_alignment(text_alignment),
-            transform: Transform::from_xyz(206.5, 280., NPC_LEVEL),
-            text_2d_bounds: Text2dBounds {
-                size: Vec2::new(400., 4000.)
-            },
-            ..default()
-        })
-            .insert(NpcText)
-            .insert(Name::new("Npc Text"));
-
-        game.npcs.push(squee_entity);
-
-        // have npc say something on start
-        let index = self.phrase_index;
-
-        commands.entity(game.get_npc()).insert(Say::new(
-            self.phrases[index].clone()
-        ));
+        game.npc_data.say(commands, text.as_str())
     }
 }
 
@@ -298,30 +270,35 @@ impl Segment for CraftingSegment {
         self.is_thing_crafted
     }
 
-    fn on_item_crafted(&mut self, commands: &mut Commands, game : &mut ResMut<GameManager>, element: Element) {
+    fn on_item_crafted (
+        &mut self, commands: &mut Commands,
+        asset_server: &Res<AssetServer>,
+        game: &mut ResMut<GameManager>,
+        event_caller : &mut EventCaller,
+        element: Element
+    ) {
         if element == self.goal {
             self.is_thing_crafted = true;
         }
         if let Some(comment) = self.comments.get(&element) {
-            commands.entity(game.get_npc()).insert(Say::new(
-                comment
-            ));
+            game.npc_data.say(commands, comment.as_str())
         }
     }
 
-    fn on_npc_click(&mut self, game: &ResMut<GameManager>, commands: &mut Commands) {
+    fn on_npc_click(
+        &mut self, commands: &mut Commands,
+        asset_server: &Res<AssetServer>,
+        game: &mut ResMut<GameManager>,
+        event_caller : &mut EventCaller
+    ) {
         println!("On Click");
         if self.current_hint >= self.hints.len() {
             self.current_hint = 0
         }
         let text = self.hints.get(self.current_hint).unwrap();
-        commands.entity(game.get_npc()).insert(Say::new(
-            text
-        ));
+        game.npc_data.say(commands, text.as_str());
         self.current_hint += 1;
     }
-
-    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>) {}
 }
 
 //==================================================================================================
