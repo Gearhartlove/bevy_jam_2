@@ -50,7 +50,9 @@ impl Npc {
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum NpcKind {
     Squee,
-    Conrad
+    Conrad,
+    Pumkinhead,
+    Gordon,
 }
 
 //==================================================================================================
@@ -75,19 +77,59 @@ fn setup_npc_assets(
         talking_index: 0,
     };
 
-    let conrad = Npc {
+    let conrad1 = Npc {
         kind: NpcKind::Conrad,
         name: "Sir Conrad".to_string(),
-        sprite: asset_server.load("sprites/knight.png"),
+        sprite: asset_server.load("sprites/sir_conrad.png"),
         sprite_path: "sprites/knight.png".to_string(),
         talking_anims: vec![
+            asset_server.load("sprites/sir_conrad_talk_1.png"),
+            asset_server.load("sprites/sir_conrad_talk_2.png"),
+        ],
+        talking_index: 0,
+    };
 
+    let pumpkinhead = Npc {
+        kind: NpcKind::Pumkinhead,
+        name: "Pumpkinhead".to_string(),
+        sprite: asset_server.load("sprites/pumpkinhead.png"),
+        sprite_path: "sprites/knight.png".to_string(),
+        talking_anims: vec![
+            asset_server.load("sprites/pumpkinhead_talk_1.png"),
+            asset_server.load("sprites/pumpkinhead_talk_2.png"),
+        ],
+        talking_index: 0,
+    };
+
+    let conrad2 = Npc {
+        kind: NpcKind::Conrad,
+        name: "Sir Conrad".to_string(),
+        sprite: asset_server.load("sprites/sir_conrad.png"),
+        sprite_path: "sprites/knight.png".to_string(),
+        talking_anims: vec![
+            asset_server.load("sprites/sir_conrad_talk_1.png"),
+            asset_server.load("sprites/sir_conrad_talk_2.png"),
+        ],
+        talking_index: 0,
+    };
+
+    let gordon = Npc {
+        kind: NpcKind::Gordon,
+        name: "Sir Conrad".to_string(),
+        sprite: asset_server.load("sprites/gordon.png"),
+        sprite_path: "sprites/knight.png".to_string(),
+        talking_anims: vec![
+            asset_server.load("sprites/gordon_talk_1.png"),
+            asset_server.load("sprites/gordon_talk_2.png"),
         ],
         talking_index: 0,
     };
 
     game.npc_data.npcs.push(squee);
-    game.npc_data.npcs.push(conrad);
+    game.npc_data.npcs.push(conrad1);
+    game.npc_data.npcs.push(pumpkinhead);
+    game.npc_data.npcs.push(conrad2);
+    game.npc_data.npcs.push(gordon);
 
     // NPC Sprite
     let npc_sprite = commands.spawn_bundle(SpriteBundle {
@@ -168,6 +210,10 @@ impl NPCData {
         if let Some(text_box) = self.npc_dialog_box {
             commands.entity(text_box).insert(Say::new(message));
         };
+    }
+
+    pub fn spawn_next_npc(&mut self) {
+        self.current_npc += 1;
     }
 }
 
@@ -252,21 +298,8 @@ fn dialogue(
                     *sprite_handle = npc.sprite.clone();
                     // change sprite scaling
                     let change_sprite_size = |width: f32, height: f32, mut sprite: &mut Sprite| {
-                        sprite.custom_size = Some(Vec2::new(width * 8., height * 8.,));
+                        sprite.custom_size = Some(Vec2::new(28. * 8., 38. * 8.,));
                     };
-
-                    // match on the npc name
-                    match npc.kind {
-                        NpcKind::Squee => {
-                            change_sprite_size(28., 38., &mut sprite);
-                            println!("squee")
-                        }
-                        NpcKind::Conrad => {
-                            change_sprite_size(28., 38., &mut sprite);
-                            println!("conrad");
-                        }
-                    }
-
                 }
 
                 // compute the new i

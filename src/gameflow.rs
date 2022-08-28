@@ -77,7 +77,7 @@ fn update_gameflow(
     mut insert_element_event : EventWriter<InsertElementEvent>,
 ) {
 
-    println!("{} | {}", gameflow.current, gameflow.segments.len());
+    //println!("{} | {}", gameflow.current, gameflow.segments.len());
     let mut event_caller = EventCaller::default();
 
     let mut should_init = false;
@@ -127,6 +127,17 @@ impl Default for Gameflow {
                 .add_line("Test2")
                 .add_line("Test3")
             )
+
+            .add_segment(TransitionSegment::new(
+                // Exiting Phrases
+                vec![
+                    "I'm leaving now".to_string(),
+                ],
+                // Entering Phrases
+                vec![
+                    "Well Hello There! I am in need of a sandwitch, can you help me out?".to_string(),
+                ],
+            ))
 
             .add_segment(CraftingSegment::new(Element::UTTER_ICE_CREAM.clone())
                 .with_hint("Hint 1")
@@ -314,5 +325,69 @@ impl Segment for CraftingSegment {
 }
 
 //==================================================================================================
-//                    Crafting Segment
+//                    Transition Segment
 //==================================================================================================
+
+pub struct TransitionSegment {
+    leaving_phrases: Vec<String>,
+    entering_phrases: Vec<String>,
+    leaving_index: i32,
+    entering_index: i32,
+}
+
+impl TransitionSegment {
+    fn new(
+        leaving_phrases: Vec<String>,
+        entering_phrases: Vec<String>,
+    ) -> Self {
+        Self {
+            leaving_phrases,
+            entering_phrases,
+            leaving_index: -1,
+            entering_index: -1,
+        }
+    }
+
+    pub fn is_old_npc_done(&self) -> bool {
+        self.leaving_index >= (self.leaving_phrases.len() as i32) - 1
+    }
+
+    pub fn is_new_npc_done(&self) -> bool {
+        self.entering_index >= (self.entering_phrases.len() as i32) - 1
+    }
+
+    pub fn get_next_phrase(&mut self) -> String {
+        let get_phrase = |index: &mut i32, phrases: &Vec<String>| -> String {
+            *index += 1;
+            let i = *index as usize;
+            return if let Some(s) = phrases.get(i as usize) {
+                s.clone()
+            } else {
+                "Index Out of bounds".to_string()
+            };
+        };
+
+        if self.is_old_npc_done() {
+            get_phrase(&mut self.entering_index, &self.entering_phrases)
+        } else {
+            get_phrase(&mut self.leaving_index, &self.leaving_phrases)
+        }
+    }
+}
+
+impl Segment for TransitionSegment {
+    fn is_complete(&self) -> bool {
+        self.is_old_npc_done() && self.is_new_npc_done()
+    }
+
+    fn on_npc_click(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        if self.is_new_npc_done() {
+            return;
+        }
+        if self.is_old_npc_done() && self.entering_index == -1 { // -1 because the 0 index of the dialogue Vec has not been said
+            game.npc_data.spawn_next_npc()
+        }
+        let phrase = self.get_next_phrase();
+        game.npc_data.say(commands, phrase.as_str());
+    }
+}
