@@ -1,5 +1,6 @@
 mod squee;
 
+use bevy::ecs::system::Command;
 use bevy::math::Vec2Swizzles;
 use bevy::prelude::*;
 use bevy::text::Text2dBounds;
@@ -18,8 +19,9 @@ pub struct NpcPlugin;
 impl Plugin for NpcPlugin {
     fn build(&self, app: &mut App) {
         app
-            // .add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup_dialogue))
             .add_event::<NpcClickEvent>()
+            .init_resource::<NPCData>()
+            .add_startup_system(setup_npc_assets)
             .add_system(click_npc)
             .add_system(dialogue);
     }
@@ -52,13 +54,130 @@ pub enum NpcKind {
 }
 
 //==================================================================================================
+//                  Setup
+//==================================================================================================
+
+fn setup_npc_assets(
+    mut commands : Commands,
+    asset_server : Res<AssetServer>,
+    mut game : ResMut<GameManager>
+) {
+    //Squee
+    let squee = Npc {
+        kind: NpcKind::Squee,
+        name: "Squee the Thumbless".to_string(),
+        sprite: asset_server.load("sprites/squee.png"),
+        sprite_path: "sprites/squee.png".to_string(),
+        talking_anims: vec![
+            asset_server.load("sprites/squee_talk1.png"),
+            asset_server.load("sprites/squee_talk2.png"),
+        ],
+        talking_index: 0,
+    };
+
+    let conrad = Npc {
+        kind: NpcKind::Conrad,
+        name: "Sir Conrad".to_string(),
+        sprite: asset_server.load("sprites/knight.png"),
+        sprite_path: "sprites/knight.png".to_string(),
+        talking_anims: vec![
+
+        ],
+        talking_index: 0,
+    };
+
+    game.npc_data.npcs.push(squee);
+    game.npc_data.npcs.push(conrad);
+
+    // NPC Sprite
+    let npc_sprite = commands.spawn_bundle(SpriteBundle {
+        sprite: Sprite {
+            custom_size: Some(Vec2::new(28. * 8., 38. * 8.)),
+            ..default()
+        },
+        transform: Transform::from_xyz(384., 136., NPC_LEVEL),
+        texture: asset_server.load("sprites/squee.png"),
+        ..default()
+    })
+        .insert(NpcSprite)
+        .insert(Name::new("NpcSprite"))
+        .id();
+
+    // NPC Text Box
+    let font = asset_server.load("fonts/pixel_font.ttf");
+    // todo: change
+    let text_style = TextStyle {
+        font,
+        font_size: 20.,
+        color: Color::WHITE,
+    };
+    let text_alignment = TextAlignment {
+        vertical: VerticalAlign::Top,
+        horizontal: HorizontalAlign::Left,
+    };
+
+    let npc_text_box = commands.spawn_bundle(Text2dBundle {
+        text: Text::from_section("", text_style).with_alignment(text_alignment),
+        transform: Transform::from_xyz(206.5, 280., NPC_LEVEL),
+        text_2d_bounds: Text2dBounds {
+            size: Vec2::new(400., 4000.)
+        },
+        ..default()
+    })
+        .insert(NpcText)
+        .insert(Name::new("Npc Text")).id();
+
+    game.npc_data.npc_sprite = Some(npc_sprite);
+    game.npc_data.npc_dialog_box = Some(npc_text_box);
+}
+
+//==================================================================================================
+//                  NPC Data
+//==================================================================================================
+
+
+pub struct NPCData {
+    npcs : Vec<Npc>,
+    current_npc : usize,
+    npc_dialog_box : Option<Entity>,
+    npc_sprite : Option<Entity>,
+}
+
+impl Default for NPCData {
+    fn default() -> Self {
+        NPCData {
+            npcs : Vec::new(),
+            current_npc: 0,
+            npc_dialog_box : None,
+            npc_sprite : None
+        }
+    }
+}
+
+impl NPCData {
+
+    pub fn get_current_npc(&self) -> Option<&Npc> {
+        self.npcs.get(self.current_npc)
+    }
+
+    pub fn get_current_npc_mut(&mut self) -> Option<&mut Npc> {
+        self.npcs.get_mut(self.current_npc)
+    }
+
+    pub fn say(&self, commands : &mut Commands, message : &str) {
+        if let Some(text_box) = self.npc_dialog_box {
+            commands.entity(text_box).insert(Say::new(message));
+        };
+    }
+}
+
+//==================================================================================================
 // Everything dialogue related below, inspired from @Inspirateur's 'Undoing' dialogue system in charter.rs
 // link: https://github.com/Inspirateur/Undoing/blob/main/src/character.rs
 //==================================================================================================
 
 #[derive(Component)]
 pub struct Say {
-    // npc: String,
     text: String,
     i: usize,
     start: f64,
@@ -114,63 +233,18 @@ pub struct NpcText;
 #[derive(Component)]
 pub struct NpcSprite;
 
-/// Spawns the sprite and the text box for the npc
-// fn setup_dialogue(
-//     mut commands: Commands,
-//     asset_server: Res<AssetServer>,
-//     current_quest: Res<Quest<'static>>,
-//     game: Res<GameManager>
-// ) {
-//     let npc_file_path = current_quest;
-//
-//     // npc
-//     commands.spawn_bundle(SpriteBundle {
-//         sprite: Sprite {
-//             custom_size: Some(Vec2::splat(128.)),
-//             ..default()
-//         },
-//         transform: Transform::from_xyz(384., 136., NPC_LEVEL),
-//         texture: asset_server.load("sprites/empty.png"),
-//         ..default()
-//     })
-//         .insert(NpcSprite)
-//         .insert(Name::new("NpcSprite"));
-//
-//     // text bubble
-//     let font = asset_server.load("fonts/pixel_font.ttf");
-//     // todo: change
-//     let text_style = TextStyle {
-//         font,
-//         font_size: 20.,
-//         color: Color::WHITE,
-//     };
-//     let text_alignment = TextAlignment {
-//         vertical: VerticalAlign::Top,
-//         horizontal: HorizontalAlign::Left,
-//     };
-//
-//     commands.spawn_bundle(Text2dBundle {
-//         text: Text::from_section("", text_style).with_alignment(text_alignment),
-//         transform: Transform::from_xyz(206.5, 280., NPC_LEVEL),
-//         text_2d_bounds: Text2dBounds {
-//             size: Vec2::new(400., 4000.,)
-//         },
-//         ..default()
-//     })
-//         .insert(NpcText)
-//         .insert(Name::new("Npc Text"));
-// }
-
 fn dialogue(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut Npc, &mut Say)>,
-    mut query_text: Query<&mut Text, With<NpcText>>,
+    mut query_text: Query<(Entity, &mut Text, &mut Say), With<NpcText>>,
     mut query_sprite: Query<(&mut Handle<Image>, &mut Sprite),  With<NpcSprite>>,
     time: Res<Time>,
+    mut game : ResMut<GameManager>
     // audio: Res<Audio>
 ) {
-    if let Ok((entity, mut npc, mut say)) = query.get_single_mut() {
-        if let Ok(mut text) = query_text.get_single_mut() {
+    let mut npc = game.npc_data.get_current_npc_mut();
+
+    if let Some(npc) = npc {
+        if let Ok((entity, mut text, mut say)) = query_text.get_single_mut() {
             if let Ok((mut sprite_handle, mut sprite)) = query_sprite.get_single_mut() {
                 if say.i == 0 {
                     say.start = time.seconds_since_startup();
