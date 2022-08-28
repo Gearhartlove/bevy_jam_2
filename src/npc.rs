@@ -2,20 +2,23 @@ use bevy::math::Vec2Swizzles;
 use bevy::prelude::*;
 use bevy::text::Text2dBounds;
 use bevy_inspector_egui::egui::FontSelection::Style;
+use bevy_prototype_debug_lines::DebugLines;
 use imagesize::size;
-use crate::AppState;
+use crate::{AppState, GameHelper};
 use crate::element::Element;
-use crate::game::{Game, GameStatus};
+use crate::game::{GameManager, GameStatus};
 use crate::game::GameStatus::QuestComplete;
 use crate::quest::Quest;
-use crate::ui::NPC_LEVEL;
+use crate::ui::{NPC_LEVEL, Rect, Slot};
 
 pub struct NpcPlugin;
 
 impl Plugin for NpcPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup_dialogue))
+            // .add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup_dialogue))
+            .add_event::<NpcClickEvent>()
+            .add_system(click_npc)
             .add_system(dialogue);
     }
 }
@@ -110,51 +113,51 @@ pub struct NpcText;
 pub struct NpcSprite;
 
 /// Spawns the sprite and the text box for the npc
-fn setup_dialogue(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    current_quest: Res<Quest<'static>>,
-    game: Res<Game>
-) {
-    let npc_file_path = current_quest;
-
-    // npc
-    commands.spawn_bundle(SpriteBundle {
-        sprite: Sprite {
-            custom_size: Some(Vec2::splat(128.)),
-            ..default()
-        },
-        transform: Transform::from_xyz(384., 136., NPC_LEVEL),
-        texture: asset_server.load("sprites/empty.png"),
-        ..default()
-    })
-        .insert(NpcSprite)
-        .insert(Name::new("NpcSprite"));
-
-    // text bubble
-    let font = asset_server.load("fonts/pixel_font.ttf");
-    // todo: change
-    let text_style = TextStyle {
-        font,
-        font_size: 20.,
-        color: Color::WHITE,
-    };
-    let text_alignment = TextAlignment {
-        vertical: VerticalAlign::Top,
-        horizontal: HorizontalAlign::Left,
-    };
-
-    commands.spawn_bundle(Text2dBundle {
-        text: Text::from_section("", text_style).with_alignment(text_alignment),
-        transform: Transform::from_xyz(206.5, 280., NPC_LEVEL),
-        text_2d_bounds: Text2dBounds {
-            size: Vec2::new(400., 4000.,)
-        },
-        ..default()
-    })
-        .insert(NpcText)
-        .insert(Name::new("Npc Text"));
-}
+// fn setup_dialogue(
+//     mut commands: Commands,
+//     asset_server: Res<AssetServer>,
+//     current_quest: Res<Quest<'static>>,
+//     game: Res<GameManager>
+// ) {
+//     let npc_file_path = current_quest;
+//
+//     // npc
+//     commands.spawn_bundle(SpriteBundle {
+//         sprite: Sprite {
+//             custom_size: Some(Vec2::splat(128.)),
+//             ..default()
+//         },
+//         transform: Transform::from_xyz(384., 136., NPC_LEVEL),
+//         texture: asset_server.load("sprites/empty.png"),
+//         ..default()
+//     })
+//         .insert(NpcSprite)
+//         .insert(Name::new("NpcSprite"));
+//
+//     // text bubble
+//     let font = asset_server.load("fonts/pixel_font.ttf");
+//     // todo: change
+//     let text_style = TextStyle {
+//         font,
+//         font_size: 20.,
+//         color: Color::WHITE,
+//     };
+//     let text_alignment = TextAlignment {
+//         vertical: VerticalAlign::Top,
+//         horizontal: HorizontalAlign::Left,
+//     };
+//
+//     commands.spawn_bundle(Text2dBundle {
+//         text: Text::from_section("", text_style).with_alignment(text_alignment),
+//         transform: Transform::from_xyz(206.5, 280., NPC_LEVEL),
+//         text_2d_bounds: Text2dBounds {
+//             size: Vec2::new(400., 4000.,)
+//         },
+//         ..default()
+//     })
+//         .insert(NpcText)
+//         .insert(Name::new("Npc Text"));
+// }
 
 fn dialogue(
     mut commands: Commands,
@@ -229,12 +232,21 @@ fn dialogue(
     }
 }
 
-fn talk_animation(
-    // mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut query: Query<(Entity, &mut Handle<Image>, &Npc), With<Say>>
+pub struct NpcClickEvent;
+
+fn click_npc(
+    game_helper: Res<GameHelper>,
+    mut writer: EventWriter<NpcClickEvent>,
+    mut lines : ResMut<DebugLines>,
+    mut query: Query<(&Transform, &Sprite), With<NpcSprite>>,
+    mouse : Res<Input<MouseButton>>,
 ) {
-    // if let Some((sprite, npc)) = query.get_single_mut() {
-    //
-    // }
+    if let Ok((transform, sprite)) = query.get_single_mut() {
+        let rect = Slot::generate_rect(transform, sprite);
+
+        rect.draw_rect(&mut lines, Color::RED);
+        if rect.is_within(game_helper.mouse_world_pos()) && mouse.just_pressed(MouseButton::Left) {
+            writer.send(NpcClickEvent);
+        };
+    }
 }

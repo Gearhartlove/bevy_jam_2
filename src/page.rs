@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy::text::Text2dBounds;
 use crate::element::Element;
-use crate::game::Game;
+use crate::game::GameManager;
 use crate::ui::{ElementInfoEvent, TEXT_LEVEL, UI_LEVEL};
 
 pub struct PagePlugin;
@@ -22,7 +22,7 @@ impl Plugin for PagePlugin {
 }
 
 fn listen_for_right_click(
-    game: Res<Game>,
+    game: Res<GameManager>,
     mut commands: Commands,
     mut asset_server: Res<AssetServer>,
     mut element_info_event: EventReader<ElementInfoEvent>,
@@ -52,7 +52,7 @@ fn listen_for_right_click(
     }
 }
 
-fn close_info(keys: Res<Input<KeyCode>>, game: Res<Game>, mut commands: Commands) {
+fn close_info(keys: Res<Input<KeyCode>>, game: Res<GameManager>, mut commands: Commands) {
     if keys.just_pressed(KeyCode::Escape) {
         commands.entity(game.pages[0]).insert(MovingTo(PagePlugin::OFF_SCREEN_POS));
     }
@@ -66,7 +66,7 @@ pub const SIZE: u32 = 64;
 fn move_page(
     mut commands: Commands,
     time: Res<Time>,
-    game: Res<Game>,
+    game: Res<GameManager>,
     mut query: Query<(Entity, &mut Transform, &MovingTo)>,
 ) {
     for (ent, mut transform, moving_to) in query.iter_mut() {
@@ -96,7 +96,7 @@ struct Page;
 #[derive(Component)]
 struct PageItemSprite;
 
-fn setup(mut game: ResMut<Game>, mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(mut game: ResMut<GameManager>, mut commands: Commands, asset_server: Res<AssetServer>) {
     let parent = commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {

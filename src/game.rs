@@ -2,6 +2,7 @@ use std::collections::linked_list::IntoIter;
 use bevy::prelude::*;
 use crate::element::Element;
 use crate::game::GameStatus::QuestComplete;
+use crate::gameflow::Gameflow;
 use crate::npc::{Npc, NpcKind, Say};
 use crate::npc::NpcKind::Squee;
 use crate::quest::{CraftingTable, Quest};
@@ -11,15 +12,21 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app
-            .init_resource::<Game>()
-            .add_startup_system(create_npcs)
-            .add_startup_system(setup_elements)
-            .add_startup_system(setup_crafting_tables)
-            .add_system_to_stage(CoreStage::PostUpdate, check_if_quest_completed)
-            .add_system(make_visible)
-            .add_system(give_next_quest);
+        app;
+            // .init_resource::<Game>()
+            // .init_resource::<Gameflow>()
+            // .add_startup_system(start_game);
+            // .add_startup_system(create_npcs)
+            // .add_startup_system(setup_elements)
+            // .add_startup_system(setup_crafting_tables)
+            // .add_system_to_stage(CoreStage::PostUpdate, check_if_quest_completed)
+            // .add_system(make_visible)
+            // .add_system(give_next_quest);
     }
+}
+
+fn start_game(mut game_flow: ResMut<Gameflow>) {
+    game_flow.advance();
 }
 
 #[derive(PartialEq, Eq)]
@@ -29,8 +36,8 @@ pub enum GameStatus {
     AllQuestsComplete,
 }
 
-pub struct Game {
-    npcs: Vec<Entity>,
+pub struct GameManager {
+    pub npcs: Vec<Entity>,
     pub pages: Vec<Entity>,
     pub slicer_ent: Option<Entity>,
     pub mixer_ent: Option<Entity>,
@@ -39,9 +46,9 @@ pub struct Game {
     pub status: GameStatus,
 }
 
-impl Default for Game {
+impl Default for GameManager {
     fn default() -> Self {
-        Game {
+        GameManager {
             npcs: vec![],
             pages: vec![],
             slicer_ent: None,
@@ -53,7 +60,7 @@ impl Default for Game {
     }
 }
 
-impl Game {
+impl GameManager {
     pub fn get_npc(&self) -> Entity {
         let mut i = 0;
         match self.npc {
@@ -79,7 +86,7 @@ fn make_visible(
 
 fn setup_crafting_tables(
     mut commands: Commands,
-    mut game: ResMut<Game>,
+    mut game: ResMut<GameManager>,
     asset_server: Res<AssetServer>,
 ) {
     let slicer = commands.spawn_bundle(SpriteBundle {
@@ -140,7 +147,7 @@ fn setup_elements(
     slot_refresh.send(RefreshSlotsEvent)
 }
 
-fn create_npcs(mut commands: Commands, asset_server: Res<AssetServer>, mut game: ResMut<Game>) {
+fn create_npcs(mut commands: Commands, asset_server: Res<AssetServer>, mut game: ResMut<GameManager>) {
     let squee_entity = commands
         .spawn()
         .insert(
@@ -181,7 +188,7 @@ fn create_npcs(mut commands: Commands, asset_server: Res<AssetServer>, mut game:
     game.npcs.push(sir_conrad);
 }
 
-pub fn give_next_quest(mut commands: Commands, mut game: ResMut<Game>, mut quest_iter: ResMut<IntoIter<Quest<'static>>>, mut current_quest: ResMut<Quest<'static>>) {
+pub fn give_next_quest(mut commands: Commands, mut game: ResMut<GameManager>, mut quest_iter: ResMut<IntoIter<Quest<'static>>>, mut current_quest: ResMut<Quest<'static>>) {
     if game.status == GameStatus::QuestComplete {
 
         // change game status
@@ -242,7 +249,7 @@ pub fn give_next_quest(mut commands: Commands, mut game: ResMut<Game>, mut quest
 fn check_if_quest_completed(
     mut commands: Commands,
     mut current_quest: Res<Quest<'static>>,
-    mut game: ResMut<Game>,
+    mut game: ResMut<GameManager>,
     mut combine_event: EventReader<ElementCraftedEvent>,
     mut mixer_unlock: EventWriter<LoadMixerEvent>,
     mut slicer_unlock: EventWriter<LoadSlicerEvent>,
