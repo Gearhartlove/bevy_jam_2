@@ -19,6 +19,8 @@ impl Plugin for BossFightPlugin {
             .register_inspectable::<Clickable>()
             .add_event::<SetupBossFightEvent>()
             .add_event::<ToggleBossUIEvent>()
+            .add_event::<WinGameEvent>()
+            .add_event::<LoseGameEvent>()
             .init_resource::<BossUIData>()
             .add_system(test_system)
             .add_system(tick_clock)
@@ -111,6 +113,12 @@ pub struct SetupBossFightEvent;
 
 #[derive(Default, Debug)]
 pub struct ToggleBossUIEvent;
+
+#[derive(Default, Debug)]
+pub struct LoseGameEvent;
+
+#[derive(Default, Debug)]
+pub struct WinGameEvent;
 
 //=================================================================================================
 //                              Resources
@@ -261,7 +269,8 @@ pub fn test_system (
 
 pub fn tick_clock (
     mut clock : Query<(&mut BossTimer, &mut Text)>,
-    time : Res<Time>
+    time : Res<Time>,
+    mut lose_game_event : EventWriter<LoseGameEvent>
 ) {
     let clock = clock.get_single_mut();
 
@@ -278,6 +287,11 @@ pub fn tick_clock (
         };
 
         text.sections.get_mut(0).unwrap().value = text_value;
+
+        if timer.timer.finished() {
+            println!("YOU LOOSE");
+            lose_game_event.send(LoseGameEvent);
+        }
 
         timer.timer.tick(time.delta());
     }
