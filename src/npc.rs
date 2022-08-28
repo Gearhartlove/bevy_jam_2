@@ -8,6 +8,7 @@ use bevy_inspector_egui::egui::FontSelection::Style;
 use bevy_prototype_debug_lines::DebugLines;
 use imagesize::size;
 use crate::{AppState, GameHelper};
+use crate::audio::SayEvent;
 use crate::element::Element;
 use crate::game::{GameManager, GameStatus};
 use crate::game::GameStatus::QuestComplete;
@@ -177,7 +178,6 @@ fn setup_npc_assets(
 //                  NPC Data
 //==================================================================================================
 
-
 pub struct NPCData {
     npcs : Vec<Npc>,
     current_npc : usize,
@@ -206,10 +206,16 @@ impl NPCData {
         self.npcs.get_mut(self.current_npc)
     }
 
-    pub fn say(&self, commands : &mut Commands, message : &str) {
+    pub fn say(&self, commands : &mut Commands, message : &str) -> f64 {
         if let Some(text_box) = self.npc_dialog_box {
+            let say = Say::new(message);
+            let length = say.duration;
             commands.entity(text_box).insert(Say::new(message));
-        };
+
+            return length;
+        } else {
+            return 0.;
+        }
     }
 
     pub fn spawn_next_npc(&mut self) {
