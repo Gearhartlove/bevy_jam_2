@@ -2,6 +2,8 @@ use std::collections::VecDeque;
 use bevy::prelude::*;
 use bevy::text::Text2dBounds;
 use bevy::utils::HashMap;
+use bevy::utils::tracing::event;
+use crate::audio::SayEvent;
 use crate::element::Element;
 use crate::game::GameManager;
 use crate::npc::{Npc, NpcClickEvent, NpcKind, NpcSprite, NpcText, Say};
@@ -44,12 +46,14 @@ pub struct EventCaller {
     pub insert_element_event : Option<InsertElementEvent>,
     pub load_mixer_event : Option<LoadMixerEvent>,
     pub load_slicer_event : Option<LoadSlicerEvent>,
+    pub say_event: Option<SayEvent>,
 }
 
 impl Default for EventCaller {
     fn default() -> Self {
         EventCaller {
             insert_element_event : None,
+            say_event: None,
             load_mixer_event : None,
             load_slicer_event : None
         }
@@ -81,7 +85,11 @@ fn update_gameflow(
     mut insert_element_event_writer: EventWriter<InsertElementEvent>,
     mut load_mixer_event_writer : EventWriter<LoadMixerEvent>,
     mut load_slicer_event_writer : EventWriter<LoadSlicerEvent>,
+    mut insert_element_event : EventWriter<InsertElementEvent>,
+    mut say_event_writer : EventWriter<SayEvent>,
 ) {
+
+    //println!("{} | {}", gameflow.current, gameflow.segments.len());
     let mut event_caller = EventCaller::default();
 
     let mut should_init = false;
@@ -93,7 +101,6 @@ fn update_gameflow(
 
     let i = gameflow.current as usize;
     if let Some(mut current) = gameflow.segments.get_mut(i) {
-
         if should_init {
             current.on_segment_start(&mut commands, &asset_server, &mut game, &mut event_caller)
         }
@@ -122,6 +129,9 @@ fn update_gameflow(
 
     if let Some(event) = event_caller.load_slicer_event {
         load_slicer_event_writer.send(event)
+    }
+    if let Some(event) = event_caller.say_event {
+        say_event_writer.send(event)
     }
 }
 
@@ -373,10 +383,11 @@ impl NpcDialogueSegment {
         }
     }
 
-    pub fn do_next_phrase(&mut self, commands : &mut Commands, game : &mut ResMut<GameManager>) {
+    pub fn do_next_phrase(&mut self, commands : &mut Commands, game : &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
         let line = self.phrases.pop_front();
         if let Some(line) = line {
-            game.npc_data.say(commands, line.as_str())
+            let duration = game.npc_data.say(commands, line.as_str());
+            event_caller.say_event = Some(SayEvent(duration));
         };
     }
 
@@ -401,12 +412,12 @@ impl Segment for NpcDialogueSegment {
         if self.phrases.is_empty() {
             self.ready_to_advance = true;
         } else {
-            self.do_next_phrase(commands, game)
+            self.do_next_phrase(commands, game, event_caller)
         }
     }
 
     fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
-        self.do_next_phrase(commands, game)
+        self.do_next_phrase(commands, game, event_caller);
     }
 }
 
@@ -470,7 +481,8 @@ impl Segment for CraftingSegment {
             self.is_thing_crafted = true;
         }
         if let Some(comment) = self.comments.get(&element) {
-            game.npc_data.say(commands, comment.as_str())
+            let duration = game.npc_data.say(commands, comment.as_str());
+            event_caller.say_event = Some(SayEvent(duration));
         }
     }
 
@@ -645,7 +657,8 @@ impl Segment for TransitionSegment {
             game.npc_data.spawn_next_npc()
         }
         let phrase = self.get_next_phrase();
-        game.npc_data.say(commands, phrase.as_str());
+        let duration = game.npc_data.say(commands, phrase.as_str());
+        event_caller.say_event = Some(SayEvent(duration));
     }
 
     fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {

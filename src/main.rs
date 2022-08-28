@@ -11,8 +11,11 @@ mod game;
 mod page;
 mod boss_fight;
 mod gameflow;
+mod audio;
 
+use std::time::Duration;
 use bevy::prelude::*;
+use bevy_kira_audio::prelude::*;
 use bevy::render::texture::ImageSettings;
 use bevy_inspector_egui::{WorldInspectorPlugin};
 use crate::AppState::{Game};
@@ -26,6 +29,7 @@ use crate::helper::{GameHelper, HelperPlugin};
 use crate::npc::NpcPlugin;
 use crate::page::PagePlugin;
 use crate::quest::{QuestPlugin};
+use crate::audio::AudioPlugin;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum AppState {
@@ -55,6 +59,7 @@ fn main() {
         .add_plugin(NpcPlugin)
         .add_plugin(PagePlugin)
         .add_plugin(BossFightPlugin)
+        .add_plugin(AudioPlugin)
         .add_startup_system(setup_camera)
         .run();
 }
@@ -62,6 +67,3 @@ fn main() {
 fn setup_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
 }
-
-#[derive(Component)]
-struct Page;

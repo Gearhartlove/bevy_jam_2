@@ -790,23 +790,17 @@ fn refresh_slots (
     }
 }
 
+fn hide_cursor(mut windows: ResMut<Windows>) {
+    let window = windows.get_primary_mut().unwrap();
+    // window.set_cursor_lock_mode(true);
+    window.set_cursor_visibility(false);
+}
+
 //==================================================================================================
 //                          Setup
 //==================================================================================================
 
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_info : ResMut<UiData>) {
-    // spawn background
-    // crate::helper::add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/tavern_bg.png", 45, 28, SpriteBundle {
-    //     transform: Transform::from_xyz(8.0, 88.0, TOP_LEVEL),
-    //     visibility: Visibility { is_visible: false },
-    //     ..default()
-    // }
-    // commands.spawn_bundle(SpriteBundle {
-    //     texture: asset_server.load("sprites/tavern_bg.png"),
-    //     transform: Transform::from_xyz(0.0, 0.0, TAVERN_LEVEL),
-    //     ..default()
-    // });
-
     commands
         .spawn_bundle(SpriteBundle {
             sprite : Sprite {
@@ -821,12 +815,6 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
         })
         .insert(DragEntity)
         .insert(Name::new("Drag Entity"));
-
-    // commands.spawn_bundle(SpriteBundle {
-    //     texture: asset_server.load("sprites/kitchen_bg.png"),
-    //     transform: Transform::from_xyz(0.0, 0.0, UI_LEVEL),
-    //     ..default()
-    // });
 
     let font = asset_server.load("fonts/pixel_font.ttf");
     let text_style = TextStyle {
