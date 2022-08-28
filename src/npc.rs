@@ -1,3 +1,5 @@
+mod squee;
+
 use bevy::math::Vec2Swizzles;
 use bevy::prelude::*;
 use bevy::text::Text2dBounds;
@@ -238,7 +240,7 @@ fn click_npc(
     game_helper: Res<GameHelper>,
     mut writer: EventWriter<NpcClickEvent>,
     mut lines : ResMut<DebugLines>,
-    mut query: Query<(&Transform, &Sprite), With<NpcSprite>>,
+    mut query: Query<(&GlobalTransform, &Sprite), With<NpcSprite>>,
     mouse : Res<Input<MouseButton>>,
 ) {
     if let Ok((transform, sprite)) = query.get_single_mut() {

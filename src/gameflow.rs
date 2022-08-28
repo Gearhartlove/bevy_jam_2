@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use bevy::text::Text2dBounds;
-use bevy_rapier2d::na::SliceRange;
+use bevy::utils::HashMap;
 use crate::element::Element;
-use crate::game::{GameManager, GameStatus};
+use crate::game::GameManager;
 use crate::npc::{Npc, NpcClickEvent, NpcKind, NpcSprite, NpcText, Say};
 use crate::ui::{ElementCraftedEvent, NPC_LEVEL};
 
@@ -51,7 +51,7 @@ fn update_gameflow(
             current.on_npc_click(&game, &mut commands);
         }
         for event in on_item_craft.iter() {
-            current.on_item_crafted(&mut commands, event.0.clone());
+            current.on_item_crafted(&mut commands, &mut game, event.0.clone());
         }
     }
 }
@@ -87,8 +87,25 @@ impl Default for Gameflow {
                     "two".to_string(),
                     "three".to_string(),
                 ]
-            ));
-            // .add_segment(SqueeTutorialCrafting::default());
+            ))
+
+            .add_segment(CraftingSegment::new(Element::UTTER_ICE_CREAM.clone())
+                .with_hint("Hint 1")
+                .with_hint("Hint 2")
+                .with_hint("Hint 3")
+                .with_comment(&Element::SHAVED_ICE, "How Cold!"))
+
+            .add_segment(NpcDialogueSegment::new(
+                vec![
+                    "Good Job! Now on to the next thing...".to_string()
+                ]
+            ))
+
+            .add_segment(NpcDialogueSegment::new(
+                vec![
+                    "Good Job! Now on to the next thing...".to_string()
+                ]
+            ));;
 
         return game_flow;
     }
@@ -100,8 +117,9 @@ trait Segment {
     fn is_complete(&self) -> bool;
 
     fn on_item_crafted(
-        &self,
+        &mut self,
         mut commands: &mut Commands,
+        game: &mut ResMut<GameManager>,
         element: Element,
     ) {}
 
@@ -118,7 +136,7 @@ trait Segment {
         commands: &mut Commands,
         asset_server: &Res<AssetServer>,
         game: &mut ResMut<GameManager>,
-    );
+    ) {}
 
     fn on_segment_end(&self) {}
 }
@@ -126,6 +144,7 @@ trait Segment {
 // ################################################################################################################################################
 // SqueeHelloPlayer
 // ################################################################################################################################################
+
 struct NpcDialogueSegment {
     phrases: Vec<String>,
     phrase_index: usize,
@@ -151,24 +170,9 @@ impl NpcDialogueSegment {
     }
 }
 
-impl Default for NpcDialogueSegment {
-    fn default() -> Self {
-        NpcDialogueSegment {
-            phrases: vec![
-                "Yo wassup!".to_string(),
-                "Nice Job clicking me!".to_string(),
-                "You are Awesome!".to_string(),
-                "You are dope!".to_string(),
-                "You are MOGIS!".to_string(),
-            ],
-            phrase_index: 0,
-        }
-    }
-}
-
 impl Segment for NpcDialogueSegment {
     fn is_complete(&self) -> bool {
-        self.phrase_index == (self.phrases.len() + 1)
+        self.phrase_index + 1 == self.phrases.len()
     }
 
     fn on_npc_click(
@@ -254,29 +258,72 @@ impl Segment for NpcDialogueSegment {
     }
 }
 
-// ################################################################################################################################################
-// SqueeCraftingTutorial
-// ################################################################################################################################################
-// struct SqueeTutorialCrafting {
-//
-// }
-//
-// impl Default for SqueeTutorialCrafting {
-//     fn default() -> Self {
-//         todo!()
-//     }
-// }
-//
-// impl Segment for SqueeTutorialCrafting {
-//     fn is_complete(&self) -> bool {
-//         todo!()
-//     }
-//
-//     fn on_item_crafted(&self, commands: &mut Commands, element: Element) {
-//
-//     }
-//
-//     fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>) {
-//         todo!()
-//     }
-// }
+//==================================================================================================
+//                    Crafting Segment
+//==================================================================================================
+
+pub struct CraftingSegment {
+    goal : Element,
+    hints : Vec<String>,
+    comments : HashMap<Element, String>,
+    is_thing_crafted : bool,
+    current_hint : usize
+}
+
+impl CraftingSegment {
+
+    pub fn new(element : Element) -> Self {
+        CraftingSegment {
+            goal : element,
+            hints : Vec::new(),
+            comments : HashMap::new(),
+            is_thing_crafted : false,
+            current_hint : 0
+        }
+    }
+
+    pub fn with_hint(mut self, hint : &str) -> CraftingSegment {
+        self.hints.push(hint.to_string());
+        self
+    }
+
+    pub fn with_comment(mut self, element : &'static Element, comment : &str) -> CraftingSegment {
+        self.comments.insert(element.clone(), comment.to_string());
+        self
+    }
+}
+
+impl Segment for CraftingSegment {
+    fn is_complete(&self) -> bool {
+        self.is_thing_crafted
+    }
+
+    fn on_item_crafted(&mut self, commands: &mut Commands, game : &mut ResMut<GameManager>, element: Element) {
+        if element == self.goal {
+            self.is_thing_crafted = true;
+        }
+        if let Some(comment) = self.comments.get(&element) {
+            commands.entity(game.get_npc()).insert(Say::new(
+                comment
+            ));
+        }
+    }
+
+    fn on_npc_click(&mut self, game: &ResMut<GameManager>, commands: &mut Commands) {
+        println!("On Click");
+        if self.current_hint >= self.hints.len() {
+            self.current_hint = 0
+        }
+        let text = self.hints.get(self.current_hint).unwrap();
+        commands.entity(game.get_npc()).insert(Say::new(
+            text
+        ));
+        self.current_hint += 1;
+    }
+
+    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>) {}
+}
+
+//==================================================================================================
+//                    Crafting Segment
+//==================================================================================================
