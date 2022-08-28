@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use bevy::prelude::*;
 use bevy::text::Text2dBounds;
 use bevy::utils::HashMap;
@@ -13,7 +14,7 @@ impl Plugin for GameflowPlugin {
         app
             .init_resource::<Gameflow>()
             .init_resource::<GameManager>()
-            .add_startup_system(start_gameflow)
+            //.add_startup_system(start_gameflow)
             .add_system_to_stage(CoreStage::PostUpdate, update_gameflow);
     }
 }
@@ -24,7 +25,8 @@ impl Plugin for GameflowPlugin {
 
 pub struct Gameflow {
     segments: Vec<Box<dyn Segment + Send + Sync>>,
-    current: i32,
+    current: u32,
+    last : u32
 }
 
 impl Gameflow {
@@ -74,22 +76,35 @@ fn update_gameflow(
     //Event Writers
     mut insert_element_event : EventWriter<InsertElementEvent>,
 ) {
-    let i = gameflow.current as usize;
-    let mut current = gameflow.segments.get_mut(i).unwrap();
+
+    println!("{} | {}", gameflow.current, gameflow.segments.len());
     let mut event_caller = EventCaller::default();
 
-    for event in on_npc_click.iter() {
-        current.on_npc_click(&mut commands, &asset_server, &mut game, &mut event_caller);
+    let mut should_init = false;
+
+    if gameflow.current != gameflow.last {
+        gameflow.last = gameflow.current;
+        should_init = true;
     }
 
-    for event in on_item_craft.iter() {
-        current.on_item_crafted(&mut commands, &asset_server, &mut game, &mut event_caller, event.0.clone());
-    }
+    let i = gameflow.current as usize;
+    if let Some(mut current) = gameflow.segments.get_mut(i) {
+        if should_init {
+            current.on_segment_start(&mut commands, &asset_server, &mut game, &mut event_caller)
+        }
 
-    if current.is_complete() {
-        current.on_segment_end(&mut commands, &asset_server, &mut game, &mut event_caller);
-        gameflow.advance();
+        for event in on_npc_click.iter() {
+            current.on_npc_click(&mut commands, &asset_server, &mut game, &mut event_caller);
+        }
 
+        for event in on_item_craft.iter() {
+            current.on_item_crafted(&mut commands, &asset_server, &mut game, &mut event_caller, event.0.clone());
+        }
+
+        if current.is_complete() {
+            current.on_segment_end(&mut commands, &asset_server, &mut game, &mut event_caller);
+            gameflow.advance();
+        }
     }
 
     if let Some(event) = event_caller.insert_element_event {
@@ -102,35 +117,30 @@ impl Default for Gameflow {
         let mut game_flow = Gameflow {
             segments: vec![],
             current: 0,
+            last: u32::MAX
         };
 
         game_flow
             // chapter 1
-            .add_segment(NpcDialogueSegment::new(
-                vec![
-                    "one".to_string(),
-                    "two".to_string(),
-                    "three".to_string(),
-                ]
-            ))
+            .add_segment(NpcDialogueSegment::new()
+                .add_line("Test1")
+                .add_line("Test2")
+                .add_line("Test3")
+            )
 
             .add_segment(CraftingSegment::new(Element::UTTER_ICE_CREAM.clone())
                 .with_hint("Hint 1")
                 .with_hint("Hint 2")
                 .with_hint("Hint 3")
-                .with_comment(&Element::SHAVED_ICE, "How Cold!"))
+                .with_comment(&Element::SHAVED_ICE, "How Cold!")
+            )
 
-            .add_segment(NpcDialogueSegment::new(
-                vec![
-                    "Good Job! Now on to the next thing...".to_string()
-                ]
-            ))
-
-            .add_segment(NpcDialogueSegment::new(
-                vec![
-                    "Good Job! Now on to the next thing...".to_string()
-                ]
-            ));;
+            .add_segment(NpcDialogueSegment::new()
+                .add_line("Test1")
+                .add_line("Test2")
+                .add_line("Test3")
+            )
+        ;
 
         return game_flow;
     }
@@ -189,33 +199,32 @@ trait Segment {
 // ################################################################################################################################################
 
 struct NpcDialogueSegment {
-    phrases: Vec<String>,
-    phrase_index: usize,
+    phrases: VecDeque<String>,
 }
 
 impl NpcDialogueSegment {
-    pub fn new(vec: Vec<String>) -> Self {
+    pub fn new() -> Self {
         Self {
-            phrases: vec,
-            phrase_index: 0,
+            phrases: VecDeque::new(),
         }
     }
 
-    pub fn get_next_phrase(&mut self) -> String {
-        self.phrase_index += 1;
-        println!("index: {}", self.phrase_index);
-        let index = self.phrase_index;
-        if let Some(s) = self.phrases.get(index) {
-            return s.clone();
-        } else {
-            return String::from("Out of bounds indexing npc phrases.");
-        }
+    pub fn do_next_phrase(&mut self, commands : &mut Commands, game : &mut ResMut<GameManager>) {
+        let line = self.phrases.pop_front();
+        if let Some(line) = line {
+            game.npc_data.say(commands, line.as_str())
+        };
+    }
+
+    pub fn add_line(mut self, line : &str) -> Self {
+        self.phrases.push_back(line.to_string());
+        self
     }
 }
 
 impl Segment for NpcDialogueSegment {
     fn is_complete(&self) -> bool {
-        self.phrase_index + 1 == self.phrases.len()
+        self.phrases.is_empty()
     }
 
     fn on_npc_click(
@@ -225,8 +234,11 @@ impl Segment for NpcDialogueSegment {
         game: &mut ResMut<GameManager>,
         event_caller : &mut EventCaller
     ) {
-        let text = self.get_next_phrase();
-        game.npc_data.say(commands, text.as_str())
+        self.do_next_phrase(commands, game)
+    }
+
+    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        self.do_next_phrase(commands, game)
     }
 }
 
