@@ -15,6 +15,7 @@ use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier2d::prelude::Collider;
 use crate::element::Element;
 use crate::{GameHelper, MixerRecipeIden};
+use crate::game::GameManager;
 use crate::helper::add_scaled_pixel_asset;
 use crate::registry::{FurnaceRecipeIden, Registry};
 
@@ -671,56 +672,60 @@ fn drag_item(
     mut lines : ResMut<DebugLines>,
     game_helper : Res<GameHelper>,
     mut drag_info : ResMut<UiData>,
+    game : Res<GameManager>,
     mut drop_element_event : EventWriter<DropElementEvent>,
     mut entered_slot_event : EventWriter<SlotEnteredEvent>,
     mut left_slot_event : EventWriter<SlotLeftEvent>,
     mut element_info_event : EventWriter<ElementInfoEvent>
 ) {
-    let mut is_in_slots = false;
 
-    for (mut slot, transform, sprite) in slot_query.iter_mut() {
-        let rect = Slot::generate_rect(transform, sprite);
-        rect.draw_rect(&mut lines, Color::RED);
-        //draw_box(&mut lines, transform.translation, width, height, Color::RED);
+        let mut is_in_slots = false;
 
-        let is_within = rect.is_within(game_helper.mouse_world_pos());
-        if is_within {
-            is_in_slots = true;
-        }
+        for (mut slot, transform, sprite) in slot_query.iter_mut() {
+            let rect = Slot::generate_rect(transform, sprite);
+            rect.draw_rect(&mut lines, Color::RED);
 
-        if is_within && drag_info.last_slot_hovered != slot.index {
-            left_slot_event.send(SlotLeftEvent(drag_info.last_slot_hovered));
-            entered_slot_event.send(SlotEnteredEvent(slot.index));
-            drag_info.last_slot_hovered = slot.index
-        }
+            let is_within = rect.is_within(game_helper.mouse_world_pos());
 
-        if is_within && buttons.just_pressed(MouseButton::Right) && slot.element.is_some() && slot.can_change {
-            slot.element = None;
-        }
+            if is_within {
+                is_in_slots = true;
+            }
 
-        if is_within && buttons.just_pressed(MouseButton::Right) && slot.element.is_some() && !slot.can_change {
-            element_info_event.send(ElementInfoEvent(slot.element.as_ref().unwrap().clone()));
-        }
+            if game.can_use_ui {
+                if is_within && buttons.just_pressed(MouseButton::Right) && slot.element.is_some() && slot.can_change {
+                    slot.element = None;
+                }
 
-        if is_within && buttons.just_pressed(MouseButton::Left) && drag_info.currently_dragging.is_none() && slot.element.is_some() {
-            drag_info.currently_dragging = Some(slot.element.as_ref().unwrap().clone());
-            drag_info.should_change_sprite = true;
+                if is_within && buttons.just_pressed(MouseButton::Left) && drag_info.currently_dragging.is_none() && slot.element.is_some() {
+                    drag_info.currently_dragging = Some(slot.element.as_ref().unwrap().clone());
+                    drag_info.should_change_sprite = true;
 
-            if slot.can_change {
-                slot.element = None
+                    if slot.can_change {
+                        slot.element = None
+                    }
+                }
+
+                if buttons.just_released(MouseButton::Left) && drag_info.currently_dragging.is_some() {
+                    drop_element_event.send(DropElementEvent(game_helper.mouse_world_pos(),drag_info.currently_dragging.as_ref().unwrap().clone()));
+                    drag_info.currently_dragging = None;
+                }
+            }
+
+            if is_within && drag_info.last_slot_hovered != slot.index {
+                left_slot_event.send(SlotLeftEvent(drag_info.last_slot_hovered));
+                entered_slot_event.send(SlotEnteredEvent(slot.index));
+                drag_info.last_slot_hovered = slot.index
+            }
+
+            if is_within && buttons.just_pressed(MouseButton::Right) && slot.element.is_some() && !slot.can_change {
+                element_info_event.send(ElementInfoEvent(slot.element.as_ref().unwrap().clone()));
             }
         }
 
-        if buttons.just_released(MouseButton::Left) && drag_info.currently_dragging.is_some() {
-            drop_element_event.send(DropElementEvent(game_helper.mouse_world_pos(),drag_info.currently_dragging.as_ref().unwrap().clone()));
-            drag_info.currently_dragging = None;
+        if !is_in_slots && drag_info.last_slot_hovered != u32::MAX {
+            left_slot_event.send(SlotLeftEvent(drag_info.last_slot_hovered));
+            drag_info.last_slot_hovered = u32::MAX;
         }
-    }
-
-    if !is_in_slots && drag_info.last_slot_hovered != u32::MAX {
-        left_slot_event.send(SlotLeftEvent(drag_info.last_slot_hovered));
-        drag_info.last_slot_hovered = u32::MAX;
-    }
 }
 
 pub fn on_drop_element(

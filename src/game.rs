@@ -44,6 +44,8 @@ pub struct GameManager {
     pub furnace_ent: Option<Entity>,
     pub npc: NpcKind,
     pub status: GameStatus,
+
+    pub can_use_ui : bool
 }
 
 impl Default for GameManager {
@@ -56,6 +58,7 @@ impl Default for GameManager {
             furnace_ent: None,
             npc: NpcKind::Squee,
             status: GameStatus::QuestComplete,
+            can_use_ui : false
         }
     }
 }

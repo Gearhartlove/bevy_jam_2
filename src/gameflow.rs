@@ -5,7 +5,7 @@ use bevy::utils::HashMap;
 use crate::element::Element;
 use crate::game::GameManager;
 use crate::npc::{Npc, NpcClickEvent, NpcKind, NpcSprite, NpcText, Say};
-use crate::ui::{ElementCraftedEvent, InsertElementEvent, NPC_LEVEL};
+use crate::ui::{CraftType, ElementCraftedEvent, InsertElementEvent, LoadMixerEvent, LoadSlicerEvent, NPC_LEVEL};
 
 pub struct GameflowPlugin;
 
@@ -41,13 +41,17 @@ impl Gameflow {
 }
 
 pub struct EventCaller {
-    pub insert_element_event : Option<InsertElementEvent>
+    pub insert_element_event : Option<InsertElementEvent>,
+    pub load_mixer_event : Option<LoadMixerEvent>,
+    pub load_slicer_event : Option<LoadSlicerEvent>,
 }
 
 impl Default for EventCaller {
     fn default() -> Self {
         EventCaller {
-            insert_element_event : None
+            insert_element_event : None,
+            load_mixer_event : None,
+            load_slicer_event : None
         }
     }
 }
@@ -74,10 +78,10 @@ fn update_gameflow(
     mut on_item_craft: EventReader<ElementCraftedEvent>,
 
     //Event Writers
-    mut insert_element_event : EventWriter<InsertElementEvent>,
+    mut insert_element_event_writer: EventWriter<InsertElementEvent>,
+    mut load_mixer_event_writer : EventWriter<LoadMixerEvent>,
+    mut load_slicer_event_writer : EventWriter<LoadSlicerEvent>,
 ) {
-
-    //println!("{} | {}", gameflow.current, gameflow.segments.len());
     let mut event_caller = EventCaller::default();
 
     let mut should_init = false;
@@ -89,6 +93,7 @@ fn update_gameflow(
 
     let i = gameflow.current as usize;
     if let Some(mut current) = gameflow.segments.get_mut(i) {
+
         if should_init {
             current.on_segment_start(&mut commands, &asset_server, &mut game, &mut event_caller)
         }
@@ -108,7 +113,15 @@ fn update_gameflow(
     }
 
     if let Some(event) = event_caller.insert_element_event {
-        insert_element_event.send(event)
+        insert_element_event_writer.send(event)
+    }
+
+    if let Some(event) = event_caller.load_mixer_event {
+        load_mixer_event_writer.send(event)
+    }
+
+    if let Some(event) = event_caller.load_slicer_event {
+        load_slicer_event_writer.send(event)
     }
 }
 
@@ -123,34 +136,172 @@ impl Default for Gameflow {
         game_flow
             // chapter 1
             .add_segment(NpcDialogueSegment::new()
-                .add_line("Test1")
-                .add_line("Test2")
-                .add_line("Test3")
+                .with_line("Hey! Who are you? You arent the usual chef! Where is Gyome? (click me to continue)")
+                .with_line("Oh, my boss Gordon will not be pleased, not pleased at all!")
+                .with_line("Good thing I came by to check first, he would have sauteed you with dung fruit!")
+                .with_line("Do you even know how to cook? It doesnt look like it...")
+                .with_line("Ill teach you how, just so gordon doesnt go ballistic.")
+                .with_line("Lets try to make something simple.. something like ice cream!")
             )
 
-            .add_segment(TransitionSegment::new(
-                // Exiting Phrases
-                vec![
-                    "I'm leaving now".to_string(),
-                ],
-                // Entering Phrases
-                vec![
-                    "Well Hello There! I am in need of a sandwitch, can you help me out?".to_string(),
-                ],
-            ))
-
-            .add_segment(CraftingSegment::new(Element::UTTER_ICE_CREAM.clone())
-                .with_hint("Hint 1")
-                .with_hint("Hint 2")
-                .with_hint("Hint 3")
-                .with_comment(&Element::SHAVED_ICE, "How Cold!")
+            .add_segment(GiveElementSegment::new(Element::YETI_WATER))
+            .add_segment(GiveElementSegment::new(Element::FROZEN_DRAGON_SCALE)
+                .with_line("Take these. Youll need them.")
             )
 
             .add_segment(NpcDialogueSegment::new()
-                .add_line("Test1")
-                .add_line("Test2")
-                .add_line("Test3")
+                .with_line("To see what an item is, you can mouse over it. Right clicking will show its page in the fantastical cook book.")
+                .with_line("Lets see, first thing you need for ice cream is, well, ice.")
             )
+
+            .add_segment(CraftingSegment::new(Element::GLACIER_ICE.clone())
+                .with_hint("Go ahead and try to make ice! If you click on me I will give hints.")
+                .with_hint("You can drag items around and put them into the tools in the middle.")
+                .with_hint("Youll want to use the furnace for this. If you put something cold in the bottom slot, the item on top will freeze!")
+            )
+
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("Wow you did it. Maybe you will taste His Wrath. That is his specialty dish.")
+                .with_line("Now we need to shave that ice into smaller pieces. You have a knife dont you?")
+            )
+
+            .add_segment(LoadToolSegment::new(CraftType::SLICER)
+                .with_line("Oh, its over there.")
+            )
+
+            .add_segment(CraftingSegment::new(Element::SHAVED_ICE.clone())
+                .with_hint("Alright, go a head and make some shaved ice.")
+                .with_hint("You shouldn't need a hint for this one.")
+                .with_hint("Really?")
+                .with_hint("Fine. Put the ice on the cutting board.")
+            )
+
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("Cool. now the last step, you need to mix the shaved ice with some cream.")
+            )
+
+            .add_segment(GiveElementSegment::new(Element::LEGEND_DAIRY)
+                .with_line("Here is the cream.")
+            )
+
+            .add_segment(LoadToolSegment::new(CraftType::MIXER)
+                .with_line("And here is the mixer.")
+            )
+
+            .add_segment(CraftingSegment::new(Element::UTTER_ICE_CREAM.clone())
+                .with_hint("Now make that ice cream.")
+                .with_hint("It takes two ingredients.")
+                .with_hint("You also need to use the mixing bowl.")
+                .with_hint("Put the shaved ice and legend dairy into the mixing bowl.")
+            )
+
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("You did it. Now that you kinda know how to cook, hopefully you can make gordon something that he likes.")
+                .with_line("If he doesnt, boy I am done for. The last guy that was in my shoes got cooked into a real nice roast.")
+                .with_line("Honestly, not a bad way to go.")
+                .with_line("Anyways, I have to go and check the other places Gordon is going to today. But before I go, Im going to give you some ingredients that you may need.")
+            )
+
+            .add_segment(GiveElementSegment::new(Element::MAGMA_PEPPER)
+                .with_line("Take this to heat your dishes.")
+            )
+
+            .add_segment(GiveElementSegment::new(Element::FANTASY_FLOUR)
+                .with_line("And this because every kitchen needs some.")
+            )
+
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("Now I gotta run! If I dont I might not make it.")
+            )
+
+            .add_segment(TransitionSegment::new(
+              vec![
+                 "Good luck... you will need it...".to_string()
+              ],
+                vec![
+                    "Hello! My name is Sir Connrad and I am in desperate need of adventuring food.".to_string()
+                ]
+            ))
+
+            //Stage 2
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("As a knight of this realm, I must see to my duties outside of the city.")
+                .with_line("And my duties today take me to the Dunes of Teveldia, to hunt the witches that lives there.")
+                .with_line("But to do this quest I must travel. Teveldia is far, far away ..")
+                .with_line("... one whole hour away ... ")
+                .with_line("And because of that, Ill need some food that I can bring with me on my journey!")
+                .with_line("Now, what better to hunt sand witches with than sandwiches!")
+                .with_line("That is what I am here for! One of your best sandwiches!")
+            )
+
+            .add_segment(CraftingSegment::new(Element::ICE_CREAM_SANDWICH.clone())
+                .with_hint("So please make me a sandwich of some sort!")
+                .with_hint("My favorite part of any sandwich is the bread. Good bread is necessary for a good sandwich.")
+                .with_hint("Ill take any type of sandwich, really!")
+                .with_comment(&Element::ELVEN_BREAD, "Yes! Any good sandwich needs some bread!")
+                .with_comment(&Element::BREAD_DOUGH, "A step in the right direction! You could be a knight yourself with intuition like that!")
+            )
+
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("Ah yes! A sandwich! Thank you good fellow, I will eat be hearty knowing that your skill in cook craft is paramount!")
+            )
+
+            .add_segment(GiveElementSegment::new(Element::GRIFFON_EGG)
+                .with_line("As payment, please accept this egg. It will help you in these trying times.")
+            )
+
+            .add_segment(TransitionSegment::new(
+                vec![
+                    "Huzuh! I am off, for glory!".to_string()
+                ],
+                vec![
+                    "... Hi, I would like some food ...".to_string()
+                ]
+            ))
+
+            //Stage 3
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("... I took my coming to order cause that over guy was loud ... ")
+                .with_line("... My name is Wilbur. I am a pig farmer from around here ... ")
+                .with_line("... please don't ask about the pumpkin, it'll make me shy ... ")
+            )
+
+            .add_segment(GiveElementSegment::new(Element::SIREN_SEAWEED)
+                .with_line("... I would like a salad with this seaweed ... ")
+            )
+
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("... I would also like it with some toppings ... ")
+                .with_line("... something creamy and something crunchy ... ")
+            )
+
+            .add_segment(CraftingSegment::new(Element::SALAD.clone())
+                .with_hint("... Could you please make me one now? ...")
+                .with_hint("... could you please hurry? I need to get back to the ranch ...")
+                .with_hint("... I like the toppings mixed together ...")
+                .with_comment(&Element::MAYO, "... that seems creamy, but to solid for a salad ...")
+                .with_comment(&Element::RANCH, "... that seems yummy ... perfect for my salad ...")
+            )
+
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("... thanks ... this salad looks really good ... ")
+                .with_line("... I am going to go home now ... I have been in public for far too long ...")
+            )
+
+            .add_segment(GiveElementSegment::new(Element::SIREN_SEAWEED)
+                .with_line("... here is something from my pig farm as payment ...")
+            )
+
+            .add_segment(TransitionSegment::new(
+                vec![
+                    "... enjoy yourself ...".to_string()
+                ],
+                vec![
+                    "Huzuh! I am back from the fray!".to_string()
+                ]
+            ))
+
+            //Stage 4
         ;
 
         return game_flow;
@@ -211,12 +362,14 @@ trait Segment {
 
 struct NpcDialogueSegment {
     phrases: VecDeque<String>,
+    ready_to_advance : bool
 }
 
 impl NpcDialogueSegment {
     pub fn new() -> Self {
         Self {
             phrases: VecDeque::new(),
+            ready_to_advance : false,
         }
     }
 
@@ -227,7 +380,7 @@ impl NpcDialogueSegment {
         };
     }
 
-    pub fn add_line(mut self, line : &str) -> Self {
+    pub fn with_line(mut self, line : &str) -> Self {
         self.phrases.push_back(line.to_string());
         self
     }
@@ -235,7 +388,7 @@ impl NpcDialogueSegment {
 
 impl Segment for NpcDialogueSegment {
     fn is_complete(&self) -> bool {
-        self.phrases.is_empty()
+        self.ready_to_advance
     }
 
     fn on_npc_click(
@@ -245,7 +398,11 @@ impl Segment for NpcDialogueSegment {
         game: &mut ResMut<GameManager>,
         event_caller : &mut EventCaller
     ) {
-        self.do_next_phrase(commands, game)
+        if self.phrases.is_empty() {
+            self.ready_to_advance = true;
+        } else {
+            self.do_next_phrase(commands, game)
+        }
     }
 
     fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
@@ -286,6 +443,15 @@ impl CraftingSegment {
         self.comments.insert(element.clone(), comment.to_string());
         self
     }
+
+    pub fn cycle_hint(&mut self, commands : &mut Commands, game : &mut ResMut<GameManager>) {
+        if self.current_hint >= self.hints.len() {
+            self.current_hint = 0
+        }
+        let text = self.hints.get(self.current_hint).unwrap();
+        game.npc_data.say(commands, text.as_str());
+        self.current_hint += 1;
+    }
 }
 
 impl Segment for CraftingSegment {
@@ -314,13 +480,104 @@ impl Segment for CraftingSegment {
         game: &mut ResMut<GameManager>,
         event_caller : &mut EventCaller
     ) {
-        println!("On Click");
-        if self.current_hint >= self.hints.len() {
-            self.current_hint = 0
+        self.cycle_hint(commands, game)
+    }
+
+    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        self.cycle_hint(commands, game);
+        game.can_use_ui = true;
+    }
+
+    fn on_segment_end(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        game.can_use_ui = false
+    }
+}
+
+//==================================================================================================
+//                    Give Element Segment
+//==================================================================================================
+
+pub struct GiveElementSegment {
+    element : Element,
+    optional_dialog : Option<String>,
+    can_continue : bool
+}
+
+impl GiveElementSegment {
+    pub fn new(element: Element) -> Self {
+        Self {
+            element,
+            optional_dialog: None,
+            can_continue : false
         }
-        let text = self.hints.get(self.current_hint).unwrap();
-        game.npc_data.say(commands, text.as_str());
-        self.current_hint += 1;
+    }
+
+    pub fn with_line(mut self, line : &str) -> Self {
+        self.optional_dialog = Some(line.to_string());
+        self
+    }
+}
+
+impl Segment for GiveElementSegment {
+    fn is_complete(&self) -> bool {
+        self.optional_dialog.is_none() || self.can_continue
+    }
+
+    fn on_npc_click(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        self.can_continue = true;
+    }
+
+    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        event_caller.insert_element_event = Some(InsertElementEvent(self.element.clone()));
+        if let Some(dialog) = &self.optional_dialog {
+            game.npc_data.say(commands, dialog.as_str())
+        }
+    }
+}
+
+//==================================================================================================
+//                    Load Tool Segment
+//==================================================================================================
+
+pub struct LoadToolSegment {
+    craft_type : CraftType,
+    optional_dialog : Option<String>,
+    can_continue : bool
+}
+
+impl LoadToolSegment {
+    pub fn new(craft_type : CraftType) -> Self {
+        Self {
+            craft_type,
+            optional_dialog: None,
+            can_continue : false
+        }
+    }
+
+    pub fn with_line(mut self, line : &str) -> Self {
+        self.optional_dialog = Some(line.to_string());
+        self
+    }
+}
+
+impl Segment for LoadToolSegment {
+    fn is_complete(&self) -> bool {
+        self.optional_dialog.is_none() || self.can_continue
+    }
+
+    fn on_npc_click(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        self.can_continue = true;
+    }
+
+    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        match self.craft_type {
+            CraftType::SLICER => event_caller.load_slicer_event = Some(LoadSlicerEvent),
+            CraftType::MIXER => event_caller.load_mixer_event = Some(LoadMixerEvent),
+            CraftType::FURNACE => {}
+        }
+        if let Some(dialog) = &self.optional_dialog {
+            game.npc_data.say(commands, dialog.as_str())
+        }
     }
 }
 
@@ -381,6 +638,17 @@ impl Segment for TransitionSegment {
     }
 
     fn on_npc_click(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        if self.is_new_npc_done() {
+            return;
+        }
+        if self.is_old_npc_done() && self.entering_index == -1 { // -1 because the 0 index of the dialogue Vec has not been said
+            game.npc_data.spawn_next_npc()
+        }
+        let phrase = self.get_next_phrase();
+        game.npc_data.say(commands, phrase.as_str());
+    }
+
+    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
         if self.is_new_npc_done() {
             return;
         }
