@@ -7,7 +7,7 @@ use crate::audio::SayEvent;
 use crate::element::Element;
 use crate::game::GameManager;
 use crate::npc::{Npc, NpcClickEvent, NpcKind, NpcSprite, NpcText, Say};
-use crate::ui::{CraftType, ElementCraftedEvent, InsertElementEvent, LoadMixerEvent, LoadSlicerEvent, NPC_LEVEL};
+use crate::ui::{CraftType, ElementCraftedEvent, InsertElementEvent, LoadFurnaceEvent, LoadMixerEvent, LoadSlicerEvent, NPC_LEVEL};
 
 pub struct GameflowPlugin;
 
@@ -46,6 +46,7 @@ pub struct EventCaller {
     pub insert_element_event : Option<InsertElementEvent>,
     pub load_mixer_event : Option<LoadMixerEvent>,
     pub load_slicer_event : Option<LoadSlicerEvent>,
+    pub load_furnace_event : Option<LoadFurnaceEvent>,
     pub say_event: Option<SayEvent>,
 }
 
@@ -55,7 +56,8 @@ impl Default for EventCaller {
             insert_element_event : None,
             say_event: None,
             load_mixer_event : None,
-            load_slicer_event : None
+            load_slicer_event : None,
+            load_furnace_event: None
         }
     }
 }
@@ -83,6 +85,7 @@ fn update_gameflow(
 
     //Event Writers
     mut insert_element_event_writer: EventWriter<InsertElementEvent>,
+    mut load_furnace_event_writer : EventWriter<LoadFurnaceEvent>,
     mut load_mixer_event_writer : EventWriter<LoadMixerEvent>,
     mut load_slicer_event_writer : EventWriter<LoadSlicerEvent>,
     mut say_event_writer : EventWriter<SayEvent>,
@@ -120,6 +123,10 @@ fn update_gameflow(
 
     if let Some(event) = event_caller.insert_element_event {
         insert_element_event_writer.send(event)
+    }
+
+    if let Some(event) = event_caller.load_furnace_event {
+        load_furnace_event_writer.send(event)
     }
 
     if let Some(event) = event_caller.load_mixer_event {
@@ -163,6 +170,8 @@ impl Default for Gameflow {
                 .with_line("To see what an item is, you can mouse over it. Right clicking will show its page in the fantastical cook book.")
                 .with_line("Lets see, first thing you need for ice cream is, well, ice.")
             )
+
+            .add_segment(LoadToolSegment::new(CraftType::FURNACE))
 
             .add_segment(CraftingSegment::new(Element::GLACIER_ICE.clone())
                 .with_hint("Go ahead and try to make ice! If you click on me I will give hints.")
@@ -496,12 +505,13 @@ impl CraftingSegment {
         self
     }
 
-    pub fn cycle_hint(&mut self, commands : &mut Commands, game : &mut ResMut<GameManager>) {
+    pub fn cycle_hint(&mut self, commands : &mut Commands, game : &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
         if self.current_hint >= self.hints.len() {
             self.current_hint = 0
         }
         let text = self.hints.get(self.current_hint).unwrap();
-        game.npc_data.say(commands, text.as_str());
+        let duration = game.npc_data.say(commands, text.as_str());
+        event_caller.say_event = Some(SayEvent(duration));
         self.current_hint += 1;
     }
 }
@@ -533,11 +543,11 @@ impl Segment for CraftingSegment {
         game: &mut ResMut<GameManager>,
         event_caller : &mut EventCaller
     ) {
-        self.cycle_hint(commands, game)
+        self.cycle_hint(commands, game, event_caller)
     }
 
     fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
-        self.cycle_hint(commands, game);
+        self.cycle_hint(commands, game, event_caller);
         game.can_use_ui = true;
     }
 
@@ -583,7 +593,8 @@ impl Segment for GiveElementSegment {
     fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
         event_caller.insert_element_event = Some(InsertElementEvent(self.element.clone()));
         if let Some(dialog) = &self.optional_dialog {
-            game.npc_data.say(commands, dialog.as_str());
+            let duration = game.npc_data.say(commands, dialog.as_str());
+            event_caller.say_event = Some(SayEvent(duration));
         }
     }
 }
@@ -626,10 +637,11 @@ impl Segment for LoadToolSegment {
         match self.craft_type {
             CraftType::SLICER => event_caller.load_slicer_event = Some(LoadSlicerEvent),
             CraftType::MIXER => event_caller.load_mixer_event = Some(LoadMixerEvent),
-            CraftType::FURNACE => {}
+            CraftType::FURNACE => event_caller.load_furnace_event = Some(LoadFurnaceEvent),
         }
         if let Some(dialog) = &self.optional_dialog {
-            game.npc_data.say(commands, dialog.as_str());
+            let duration = game.npc_data.say(commands, dialog.as_str());
+            event_caller.say_event = Some(SayEvent(duration));
         }
     }
 }
@@ -710,6 +722,7 @@ impl Segment for TransitionSegment {
             game.npc_data.spawn_next_npc()
         }
         let phrase = self.get_next_phrase();
-        game.npc_data.say(commands, phrase.as_str());
+        let duration = game.npc_data.say(commands, phrase.as_str());
+        event_caller.say_event = Some(SayEvent(duration));
     }
 }
