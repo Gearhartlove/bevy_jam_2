@@ -1,5 +1,5 @@
 # The Fantastical Cookbook
-![Screenshot]()
+![Screenshot](https://github.com/Gearhartlove/bevy_jam_2/blob/master/assets/fc_gameplay.png)
 
 [Click Here to start Cooking!](https://rustaway.itch.io/the-fantastical-cookbook)
 
