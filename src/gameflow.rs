@@ -152,11 +152,12 @@ impl Default for Gameflow {
         game_flow
             // chapter 1
             .add_segment(NpcDialogueSegment::new()
-                // .with_line("Hey! Who are you? You arent the usual chef! Where is Gyome? (click me to continue)")
-                // .with_line("Oh, my boss Gordon will not be pleased, not pleased at all!")
-                // .with_line("Good thing I came by to check first, he would have sauteed you with dung fruit!")
-                // .with_line("Do you even know how to cook? It doesnt look like it...")
-                // .with_line("Ill teach you how, just so gordon doesnt go ballistic.")
+                .with_line("Barkeep! Over here! Click on me to talk to me!")
+                .with_line("Hey! Who are you? You arent the usual chef! Where is Gyome?")
+                .with_line("Oh, my boss Gordon will not be pleased, not pleased at all!")
+                .with_line("Good thing I came by to check first, he would have sauteed you with dung fruit!")
+                .with_line("Do you even know how to cook? It doesnt look like it...")
+                .with_line("Ill teach you how, just so gordon doesnt go ballistic.")
                 .with_line("Lets try to make something simple.. something like ice cream!")
             )
 
@@ -189,7 +190,7 @@ impl Default for Gameflow {
 
             .add_segment(CraftingSegment::new(Element::SHAVED_ICE.clone())
                 .with_hint("Alright, go a head and make some shaved ice.")
-                .with_hint("You shouldn't need a hint for this one.")
+                .with_hint("You shouldnt need a hint for this one.")
                 .with_hint("Really?")
                 .with_hint("Fine. Put the ice on the cutting board.")
             )
@@ -265,7 +266,7 @@ impl Default for Gameflow {
             )
 
             .add_segment(GiveElementSegment::new(Element::GRIFFON_EGG)
-                .with_line("As payment, please accept this egg. It will help you in these trying times.")
+                .with_line("As payment, please accept this egg. It will lend you aid in these trying times.")
             )
 
             .add_segment(TransitionSegment::new(
@@ -279,9 +280,9 @@ impl Default for Gameflow {
 
             //Stage 3
             .add_segment(NpcDialogueSegment::new()
-                .with_line("... I took my coming to order cause that over guy was loud ... ")
+                .with_line("... I took my time coming to order ... that last guy was loud ... ")
                 .with_line("... My name is Wilbur. I am a pig farmer from around here ... ")
-                .with_line("... please don't ask about the pumpkin, it'll make me shy ... ")
+                .with_line("... please dont ask about the pumpkin, itll make me shy ... ")
             )
 
             .add_segment(GiveElementSegment::new(Element::SIREN_SEAWEED)
@@ -295,9 +296,12 @@ impl Default for Gameflow {
 
             .add_segment(CraftingSegment::new(Element::SALAD.clone())
                 .with_hint("... Could you please make me one now? ...")
+                .with_hint("... a salad with a creamy and crunchy topping ...")
                 .with_hint("... could you please hurry? I need to get back to the ranch ...")
                 .with_hint("... I like the toppings mixed together ...")
                 .with_comment(&Element::MAYO, "... that seems creamy, but to solid for a salad ...")
+                .with_comment(&Element::ELVEN_TOAST, "... mmmmmm smells good ...")
+                .with_comment(&Element::DICED_CROUTONS, "... those would add the most perfect crunch to my salad ...")
                 .with_comment(&Element::RANCH, "... that seems yummy ... perfect for my salad ...")
             )
 
@@ -306,7 +310,7 @@ impl Default for Gameflow {
                 .with_line("... I am going to go home now ... I have been in public for far too long ...")
             )
 
-            .add_segment(GiveElementSegment::new(Element::SIREN_SEAWEED)
+            .add_segment(GiveElementSegment::new(Element::RAW_PORK)
                 .with_line("... here is something from my pig farm as payment ...")
             )
 
@@ -320,6 +324,44 @@ impl Default for Gameflow {
             ))
 
             //Stage 4
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("Though it is earlier than expected, I am back none the less!")
+                .with_line("You see, the last sandwich you gave me started to melt as soon as I left the city gates.")
+                .with_line("These provisions must stay solid until I make it to the dunes. This was a problem you see.")
+                .with_line("But this problem was no match for the valiant Sir Conrad! I turn problems into mincemeat!")
+                .with_line("My solution being thus ... eat the sandwich given prier and come back for another, more substantial morsel.")
+                .with_line("So my request is as follows ... I would like another sandwich. This one I want to be more meaty.")
+                .with_line("Specifically I would like a breakfast sandwich with some heat to it.")
+            )
+
+            .add_segment(CraftingSegment::new(Element::CUT_SANDWICH.clone())
+                .with_hint("So if you wouldnt mind, make me that sandwich.")
+                .with_hint("A breakfast sandwich with a little bit of heat.")
+                .with_hint("Now, mind you I dont want it too spicy.")
+                .with_comment(&Element::PEPPER_FLAKES, "Yes not the whole pepper, just a bit of it. However, I still think those flakes are going to be hard to sallow...")
+                .with_comment(&Element::SCRAMBLED_EGG, "What a good filling for a breakfast sandwich! I think it is missing a protein though.")
+                .with_comment(&Element::RAW_BACON, "Now that looks intriguing! Sliced pork? How novel.")
+                .with_comment(&Element::BACON, "Listen to that sizzle, music to my ears and ambrosia for my nose!")
+                .with_comment(&Element::SANDWICH_FILLINGS, "The perfect mix of filling fillings I have ever seen.")
+                .with_comment(&Element::SPICY_SPREAD, "That will be the perfect amount of heat! Put it on the sandwich!")
+                .with_comment(&Element::SPICY_TOAST, "Now all that needs is the filling!")
+                .with_comment(&Element::SANDWICH, "That is a legendary sandwich, but you need to do one more thing to make it perfect...")
+            )
+
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("There it is! The breakfast sandwich I have been dreaming of!")
+                .with_line("Thank you fine citizen, for without your help my quest would be a wash.")
+                .with_line("Take head of your skill, for you deserve the recognition!")
+            )
+
+            .add_segment(TransitionSegment::new(
+                vec![
+                    "Huzuh and good morrow my fiend of food. Huzuh!".to_string()
+                ],
+                vec![
+                    "So, you are the one that will be cooking for me tonight?".to_string()
+                ]
+            ))
         ;
 
         return game_flow;
