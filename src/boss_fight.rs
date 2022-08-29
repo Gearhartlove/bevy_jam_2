@@ -99,13 +99,13 @@ pub struct BossTimer {
 //=================================================================================================
 
 #[derive(Bundle, Clone)]
-pub struct ClickableBundle<T> where T : Default + Sized {
+pub struct ClickableBundle<T> where T : Default + Sized + Send + Sync + 'static {
     transform : Transform,
     global_transform : GlobalTransform,
     clickable : Clickable<T>
 }
 
-impl <T> Default for ClickableBundle<T> where T : Default + Sized {
+impl <T> Default for ClickableBundle<T> where T : Default + Sized + Send + Sync + 'static {
     fn default() -> Self {
         ClickableBundle {
             transform : Transform::default(),
