@@ -19,6 +19,7 @@ impl Plugin for BossFightPlugin {
             .register_inspectable::<Clickable>()
             .add_event::<SetupBossFightEvent>()
             .add_event::<ToggleBossUIEvent>()
+            .add_event::<ToggleBossTimerEvent>()
             .add_event::<WinGameEvent>()
             .add_event::<LoseGameEvent>()
             .init_resource::<BossUIData>()
@@ -26,6 +27,7 @@ impl Plugin for BossFightPlugin {
             .add_system(tick_clock)
             .add_system(on_click::<ToggleBossUIEvent>)
             .add_system_to_stage(CoreStage::PostUpdate, setup_boss_fight)
+            .add_system_to_stage(CoreStage::PostUpdate, on_toggle_timer)
             .add_system_to_stage(CoreStage::PostUpdate, on_toggle_boss_ui)
         ;
     }
@@ -80,6 +82,7 @@ impl Inspectable for Clickable {
 #[derive(Component)]
 pub struct BossTimer {
     timer : Timer,
+    is_ticking : bool
 }
 
 //=================================================================================================
@@ -113,6 +116,9 @@ pub struct SetupBossFightEvent;
 
 #[derive(Default, Debug)]
 pub struct ToggleBossUIEvent;
+
+#[derive(Default, Debug)]
+pub struct ToggleBossTimerEvent;
 
 #[derive(Default, Debug)]
 pub struct LoseGameEvent;
@@ -155,7 +161,7 @@ pub fn setup_boss_fight (
             ..default()
         })
             .insert(Name::new("Boss Fight Menu"))
-            .insert(MovingTo(Transform::from_xyz(400.0, -592.0, 25.0)))
+            .insert( MovingTo(Transform::from_xyz(400.0, -592.0, 25.0)))
             .id();
 
         let click = add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/page_up.png", 9, 9, SpriteBundle {
@@ -164,6 +170,8 @@ pub fn setup_boss_fight (
         }).insert(Clickable {
             rect : Rect::new(-38.0, 38.0, 38.0, -38.0)
         }).insert(BossToggleButton).id();
+
+        comm
 
         let text_style = TextStyle {
             font: asset_server.load("fonts/pixel_font.ttf"),
@@ -184,6 +192,7 @@ pub fn setup_boss_fight (
             },
             ..default()
         }).insert(BossTimer {
+            is_ticking : false,
             timer : Timer::new(Duration::from_secs(600), false)
         }).id();
 
@@ -249,6 +258,20 @@ pub fn on_toggle_boss_ui(
     }
 }
 
+pub fn on_toggle_timer (
+    mut toggle_timer_event : EventReader<ToggleBossTimerEvent>,
+    mut timer : Query<&mut BossTimer>
+) {
+    if !toggle_timer_event.is_empty() {
+        let mut timer = timer.get_single_mut();
+        if let Ok(mut timer) = timer {
+            timer.is_ticking = !timer.is_ticking
+        }
+
+        toggle_timer_event.clear()
+    }
+}
+
 //=================================================================================================
 //                              Systems
 //=================================================================================================
@@ -256,10 +279,15 @@ pub fn on_toggle_boss_ui(
 pub fn test_system (
     keys : Res<Input<KeyCode>>,
     mut setup_boss_fight_event : EventWriter<SetupBossFightEvent>,
-    mut toggle_boss_ui_event : EventWriter<ToggleBossUIEvent>
+    mut toggle_boss_ui_event : EventWriter<ToggleBossUIEvent>,
+    mut toggle_boss_timer_event : EventWriter<ToggleBossTimerEvent>,
 ) {
     if keys.just_pressed(KeyCode::B) {
         setup_boss_fight_event.send(SetupBossFightEvent)
+    }
+
+    if keys.just_pressed(KeyCode::T) {
+        toggle_boss_timer_event.send(ToggleBossTimerEvent)
     }
 
     if keys.just_pressed(KeyCode::P) {
@@ -293,7 +321,9 @@ pub fn tick_clock (
             lose_game_event.send(LoseGameEvent);
         }
 
-        timer.timer.tick(time.delta());
+        if timer.is_ticking {
+            timer.timer.tick(time.delta());
+        }
     }
 }
 
