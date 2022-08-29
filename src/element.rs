@@ -13,7 +13,7 @@ impl Element {
     pub const FROZEN_DRAGON_SCALE: Element = Element::new("Frost Scale", "frost_dragon_scale", "A scale from a dragon that is cold to the touch. It will freeze you if you arent careful.");
     pub const YETI_WATER: Element = Element::new("Yeti Water", "yeti_water", "A hydrating liquid with a strange stench. You think this is just normal water, but something is off... ");
     pub const GLACIER_ICE: Element = Element::new("Glacier Ice", "glacier_ice", "Your tongue is drawn to the frosty surface...");
-    pub const LEGEND_DAIRY: Element = Element::new("Legend Dairy", "legend_dairy", "Utterly Delicious. Legend speaks of the cow from which this heavenly cream comes from");
+    pub const LEGEND_DAIRY: Element = Element::new("Legend Dairy", "legend_dairy", "Utterly Delicious. Legend speaks of the cow from which this heavenly cream comes from.");
     pub const SHAVED_ICE: Element = Element::new("Shaved Ice", "shaved_ice", "The most clean shaven ice youve ever seen. To bad you cant shave yourself like that.");
     pub const UTTER_ICE_CREAM: Element = Element::new("Utter Ice Cream", "utter_ice_cream", "Utterly delicious ice cream that comes in a cute little cone! No, I dont know where I found the cone.");
 
@@ -31,9 +31,9 @@ impl Element {
     pub const SIREN_SEAWEED: Element = Element::new("Siren Seaweed", "siren_seaweed", "The name is misleading, this isnt seaweed harvested from sirens. Sailors like to cook it for a green salty snack.");
     pub const DICED_CROUTONS: Element = Element::new("Diced Croutons", "diced_croutons", "Youre on a roll! After these croutons youll be in para-dice.");
     pub const RANCH: Element = Element::new("Ranch", "ranch", "Ranch ironically made off of a ranch. Perfect with croutons for a salad topping. Creamy and delicious, why not smother it on everything?");
-    pub const MAYO: Element = Element::new("Mayo", "mayo", "A creamy spread made by whipping two eggs together. A classic addition for sammys! A good base for dressings and spreads.");
+    pub const MAYO: Element = Element::new("Mayo", "mayo", "A creamy spread made by whipping two eggs together. A good base for dressings and spreads.");
     pub const SALAD_TOPPING: Element = Element::new("Salad Topping", "salad_topping", "A mixture of the croutons and the ranch. If only you had something to put this on...");
-    pub const SALAD: Element = Element::new("Salad", "salad", "A (sorta) healthy and tasty meal! Wilbur is sure to love this.");
+    pub const SALAD: Element = Element::new("Salad", "salad", "A sorta healthy and tasty meal! Wilbur is sure to love this.");
 
 
     //Stage 4

@@ -18,8 +18,8 @@ pub struct BossFightPlugin;
 impl Plugin for BossFightPlugin {
     fn build(&self, app: &mut App) {
         app
-            .register_inspectable::<Clickable<ToggleBossUIEvent>>()
-            .register_inspectable::<Clickable<CheckElementsEvent>>()
+            //.register_inspectable::<Clickable<ToggleBossUIEvent>>()
+            //.register_inspectable::<Clickable<CheckElementsEvent>>()
             .add_event::<SetupBossFightEvent>()
             .add_event::<ToggleBossUIEvent>()
             .add_event::<ToggleBossTimerEvent>()
@@ -27,7 +27,7 @@ impl Plugin for BossFightPlugin {
             .add_event::<LoseGameEvent>()
             .add_event::<CheckElementsEvent>()
             .init_resource::<BossUIData>()
-            .add_system(test_system)
+            //.add_system(test_system)
             .add_system(tick_clock)
             .add_system(on_click::<ToggleBossUIEvent>)
             .add_system(on_click::<CheckElementsEvent>)
@@ -401,7 +401,7 @@ pub fn on_click<T> (
 ) where T : Default + Send + Sync + 'static {
     for (clickable, transform) in clickables.iter() {
         let trans = transform.translation();
-        clickable.rect.draw_rect_with_offset(&mut lines, Color::GREEN, trans.truncate());
+        //clickable.rect.draw_rect_with_offset(&mut lines, Color::GREEN, trans.truncate());
         if clicks.just_pressed(MouseButton::Left) && clickable.rect.is_within_with_offset(game_helper.mouse_world_pos(), trans.truncate()) {
             event_writer.send(T::default())
         }

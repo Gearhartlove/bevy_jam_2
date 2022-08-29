@@ -21,7 +21,7 @@ impl PagePlugin {
 impl Plugin for PagePlugin {
     fn build(&self, app: &mut App) {
         app
-            .register_inspectable::<Clickable<PageCloseEvent>>()
+            //.register_inspectable::<Clickable<PageCloseEvent>>()
             .add_event::<PageCloseEvent>()
             .add_startup_system(setup)
             .add_system(move_page)
@@ -188,7 +188,7 @@ fn setup(mut game: ResMut<GameManager>, mut commands: Commands, asset_server: Re
         text: Text::from_section("", text_style).with_alignment(text_alignment),
         transform: Transform::from_xyz(-119.7, -1.5, 1.0),
         text_2d_bounds: Text2dBounds {
-            size: Vec2::new(282., 100.),
+            size: Vec2::new(282., 500.),
         },
         ..default()
     })

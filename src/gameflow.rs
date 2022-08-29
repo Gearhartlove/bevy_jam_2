@@ -91,6 +91,7 @@ fn update_gameflow(
     //Events Listeners
     mut on_npc_click: EventReader<NpcClickEvent>,
     mut on_item_craft: EventReader<ElementCraftedEvent>,
+    mut on_npc_drop : EventReader<NPCDropEvent>,
 
     //Event Writers
     mut insert_element_event_writer: EventWriter<InsertElementEvent>,
@@ -277,6 +278,7 @@ impl Default for Gameflow {
 
             //Stage 2
             .add_segment(NpcDialogueSegment::new()
+                .with_line("Ho there barkeep! I am in dire need of provisioning")
                 .with_line("As a knight of this realm, I must see to my duties outside of the city.")
                 .with_line("And my duties today take me to the Dunes of Teveldia, to hunt the witches that lives there.")
                 .with_line("But to do this quest I must travel. Teveldia is far, far away ..")
@@ -328,7 +330,7 @@ impl Default for Gameflow {
                 .with_line("... something creamy and something crunchy ... ")
             )
 
-            .add_segment(CraftingSegment::new(Element::SALAD.clone())
+            .add_segment(CraftingSegment::new(Element::SALAD.clone(), false)
                 .with_hint("... Could you please make me one now? ...")
                 .with_hint("... a salad with a creamy and crunchy topping ...")
                 .with_hint("... I want those crunchy things ... crawdads ... cruonans ... ahh, something like that ...")
@@ -442,6 +444,8 @@ impl Default for Gameflow {
                 .with_comment(&Element::CHASHU, "Perfectly cooked and cut. A man class after all.")
                 .with_comment(&Element::NOODLE_DOUGH, "Ah, interesting.")
                 .with_comment(&Element::RAMEN_NOODLES, "That is a nice cut of noodles.")
+                .with_comment(&Element::BOILING_WATER, "Interesting...")
+                .with_comment(&Element::HARD_BOILED_EGG, "Perfect addition to my ramen.")
             )
 
             .add_segment(NpcDialogueSegment::new()
@@ -450,6 +454,7 @@ impl Default for Gameflow {
                 .with_line("Full credits. This is a good dish. Well done!")
             )
 
+            //.add_segment(MusicChangeSegment::change_too(MusicTrack::Background))
             .add_segment(WinGameSegment)
         ;
 

@@ -57,7 +57,7 @@ impl Plugin for UiPlugin {
             .add_system(check_for_slicer_craft)
             .add_system(detect_click_page_arrows)
             .add_system(blinking_sprites)
-            .add_system(test_system)
+            //.add_system(test_system)
             //.add_system(on_drop_element.after(drag_item))
             .add_system_to_stage(CoreStage::PostUpdate, on_load_furnace)
             .add_system_to_stage(CoreStage::PostUpdate, on_load_mixer)
@@ -718,7 +718,7 @@ fn drag_item(
 
     for (mut slot, transform, sprite) in slot_query.iter_mut() {
         let rect = Slot::generate_rect(transform, sprite);
-        rect.draw_rect(&mut lines, Color::RED);
+        //rect.draw_rect(&mut lines, Color::RED);
 
         let is_within = rect.is_within(game_helper.mouse_world_pos());
 

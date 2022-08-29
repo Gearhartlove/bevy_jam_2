@@ -362,7 +362,7 @@ fn click_npc(
     if let Ok((transform, sprite)) = query.get_single_mut() {
         let rect = Slot::generate_rect(transform, sprite);
 
-        rect.draw_rect(&mut lines, Color::RED);
+        //rect.draw_rect(&mut lines, Color::RED);
         if rect.is_within(game_helper.mouse_world_pos()) && mouse.just_pressed(MouseButton::Left) {
             writer.send(NpcClickEvent);
         };
