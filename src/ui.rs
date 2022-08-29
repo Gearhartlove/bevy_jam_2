@@ -22,7 +22,7 @@ use crate::registry::{FurnaceRecipeIden, Registry};
 const TAVERN_LEVEL: f32 = 10.0;
 pub const NPC_LEVEL: f32 = 15.;
 pub const UI_LEVEL: f32 = 20.0;
-const SLOT_LEVEL: f32 = 30.0;
+pub const SLOT_LEVEL: f32 = 30.0;
 pub const TEXT_LEVEL: f32 = 40.0;
 const TOP_LEVEL: f32 = 50.0;
 const DRAG_LEVEL: f32 = 100.;

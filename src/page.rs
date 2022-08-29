@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::text::Text2dBounds;
 use crate::element::Element;
 use crate::game::GameManager;
-use crate::ui::{ElementInfoEvent, TEXT_LEVEL, UI_LEVEL};
+use crate::ui::{ElementInfoEvent, SLOT_LEVEL, TEXT_LEVEL, UI_LEVEL};
 
 pub struct PagePlugin;
 
@@ -39,6 +39,7 @@ fn listen_for_right_click(
                 if let Ok(mut title) = query_title.get_single_mut() {
                     if let Ok(mut text) = query_text.get_single_mut() {
                         let file_path = format!("sprites/{}.png", element.id);
+                        println!("{file_path}");
                         *handle = asset_server.load(&file_path);
                         title.sections[0].value = element.name.to_string();
                         text.sections[0].value = element.desc.to_string();
@@ -119,7 +120,7 @@ fn setup(mut game: ResMut<GameManager>, mut commands: Commands, asset_server: Re
             custom_size: Some(Vec2::new(16. * 8., 16. * 8.)),
             ..default()
         },
-        transform: Transform::from_xyz(0., 152., 0.0),
+        transform: Transform::from_xyz(0., 152., SLOT_LEVEL),
         texture: asset_server.load("sprites/empty.png"),
         ..default()
     })
