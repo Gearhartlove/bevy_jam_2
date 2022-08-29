@@ -297,8 +297,6 @@ impl Rect {
         Self { x1, y1, x2, y2 }
     }
 
-    pub fn splat(x: f32) -> Self { Self {x1: x, y1: x, x2: -x, y2: -x} }
-
     pub fn is_within(&self, point: Vec2) -> bool {
         self.x1 <= point.x && self.x2 >= point.x && self.y1 >= point.y && self.y2 <= point.y
     }
@@ -848,7 +846,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
 
     commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("Test", text_style),
-        transform: Transform::from_xyz(-566.0, -292.0, TEXT_LEVEL),
+        transform: Transform::from_xyz(-606.0, -292.0, TEXT_LEVEL),
         text_2d_size: Text2dSize {
             size: Vec2::new(256.0, 128.0)
         },

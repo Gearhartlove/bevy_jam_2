@@ -13,7 +13,7 @@ use crate::element::Element;
 use crate::game::{GameManager, GameStatus};
 use crate::game::GameStatus::QuestComplete;
 use crate::quest::Quest;
-use crate::ui::{NPC_LEVEL, Rect, Slot};
+use crate::ui::{NPC_LEVEL, Rect, Slot, TitleText};
 
 pub struct NpcPlugin;
 
@@ -24,6 +24,7 @@ impl Plugin for NpcPlugin {
             .init_resource::<NPCData>()
             .add_startup_system(setup_npc_assets)
             .add_system(click_npc)
+            .add_system(on_npc_hover)
             .add_system(dialogue);
     }
 }
@@ -94,7 +95,7 @@ fn setup_npc_assets(
         kind: NpcKind::Pumkinhead,
         name: "Pumpkinhead".to_string(),
         sprite: asset_server.load("sprites/pumpkinhead.png"),
-        sprite_path: "sprites/knight.png".to_string(),
+        sprite_path: "sprites/pumpkinhead.png".to_string(),
         talking_anims: vec![
             asset_server.load("sprites/pumpkinhead_talk_1.png"),
             asset_server.load("sprites/pumpkinhead_talk_2.png"),
@@ -116,9 +117,9 @@ fn setup_npc_assets(
 
     let gordon = Npc {
         kind: NpcKind::Gordon,
-        name: "Sir Conrad".to_string(),
+        name: "Gordon Gamsey".to_string(),
         sprite: asset_server.load("sprites/gordon.png"),
-        sprite_path: "sprites/knight.png".to_string(),
+        sprite_path: "sprites/gordon.png".to_string(),
         talking_anims: vec![
             asset_server.load("sprites/gordon_talk_1.png"),
             asset_server.load("sprites/gordon_talk_2.png"),
@@ -363,5 +364,25 @@ fn click_npc(
         if rect.is_within(game_helper.mouse_world_pos()) && mouse.just_pressed(MouseButton::Left) {
             writer.send(NpcClickEvent);
         };
+    }
+}
+
+fn on_npc_hover(
+    game_helper: Res<GameHelper>,
+    mut text_query: Query<(&mut Text, &mut Visibility), With<TitleText>>,
+    mut query: Query<(&GlobalTransform, &Sprite), With<NpcSprite>>,
+    mut game: Res<GameManager>,
+    mut lines : ResMut<DebugLines>,
+) {
+    if let Ok((transform, sprite)) = query.get_single_mut() {
+        let rect = Slot::generate_rect(transform, sprite);
+
+        if rect.is_within(game_helper.mouse_world_pos()) {
+            for (mut text, mut visibility) in text_query.iter_mut() {
+                let index = game.npc_data.current_npc;
+                visibility.is_visible = true;
+                text.sections[0].value = game.npc_data.npcs.get(index).unwrap().name.clone();
+            }
+        }
     }
 }

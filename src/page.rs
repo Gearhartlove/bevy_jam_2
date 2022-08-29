@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::text::Text2dBounds;
+use bevy_inspector_egui::RegisterInspectable;
 use bevy_prototype_debug_lines::DebugLines;
 use crate::boss_fight::{Clickable, ClickableBundle, on_click};
 use crate::element::Element;
@@ -17,13 +18,14 @@ impl PagePlugin {
 impl Plugin for PagePlugin {
     fn build(&self, app: &mut App) {
         app
+            .register_inspectable::<Clickable<PageCloseEvent>>()
             .add_event::<PageCloseEvent>()
             .add_startup_system(setup)
-            .add_system_to_stage(CoreStage::PostUpdate, listen_for_right_click)
             .add_system(move_page)
             .add_system(on_click::<PageCloseEvent>)
-            .add_system(click_close_page)
-            .add_system(close_info);
+            .add_system(close_info)
+            .add_system_to_stage(CoreStage::PostUpdate, on_click_close_page)
+            .add_system_to_stage(CoreStage::PostUpdate, listen_for_right_click);
     }
 }
 
@@ -179,28 +181,26 @@ fn setup(mut game: ResMut<GameManager>, mut commands: Commands, asset_server: Re
     // spawn button
     let button = commands.spawn()
         // .insert(Rect::splat(50.))
-        .insert_bundle(ClickableBundle::<PageCloseEvent> {
-            transform: Transform::from_xyz(-162., 272., 0.,),
-            clickable: Clickable {
-                rect: Rect::splat(45.),
-                event: PageCloseEvent,
-            },
-            ..default()
+        .insert(Transform::from_xyz(-162., 272., 1.,))
+        .insert(GlobalTransform::default())
+        .insert(Clickable {
+                rect: Rect::new(-50., 50., 50., -50.),
+                event: PageCloseEvent
         })
+        .insert(PageCloseButton)
         .insert(Name::new("Page Button"))
         .id();
 
     commands.entity(parent).push_children(&[title, text, sprite, button]);
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 struct PageCloseEvent;
 
 #[derive(Component)]
-struct PageButton;
+struct PageCloseButton;
 
-fn click_close_page(
-    mut lines: ResMut <DebugLines>,
+fn on_click_close_page(
     mut commands: Commands,
     mut page_close_event_reader: EventReader<PageCloseEvent>,
     mut page_query: Query<Entity, With<Page>>,
