@@ -13,14 +13,16 @@ impl SlicerRecipe {
     const CUT_SANDWICH: SlicerRecipe = SlicerRecipe::new(Element::SANDWICH, Element::CUT_SANDWICH);
     const BONE_CHOPSTICK: SlicerRecipe = SlicerRecipe::new(Element::BONE, Element::BONE_CHOPSTICK);
     const RAW_BACON: SlicerRecipe = SlicerRecipe::new(Element::RAW_PORK, Element::RAW_BACON);
+    const CHASHU: SlicerRecipe = SlicerRecipe::new(Element::COOKED_PORK, Element::CHASHU);
 
-    pub const RECIPES: [SlicerRecipe; 6] = [
+    pub const RECIPES: [SlicerRecipe; 7] = [
         SlicerRecipe::SHAVED_ICE,
         SlicerRecipe::PEPPER_FLAKES,
         SlicerRecipe::DICED_CROUTONS,
         SlicerRecipe::CUT_SANDWICH,
         SlicerRecipe::BONE_CHOPSTICK,
-        SlicerRecipe::RAW_BACON
+        SlicerRecipe::RAW_BACON,
+        SlicerRecipe::CHASHU
     ];
 
     pub const fn new(object: Element, result: Element) -> Self {

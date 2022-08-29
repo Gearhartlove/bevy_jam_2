@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy::text::Text2dBounds;
 use bevy::utils::HashMap;
 use bevy::utils::tracing::event;
+use crate::boss_fight::{SetupBossFightEvent, ToggleBossTimerEvent, WinGameEvent};
 use crate::audio::{SayEvent, MusicTrack, MusicChangeEvent};
 use crate::element::Element;
 use crate::game::GameManager;
@@ -48,6 +49,9 @@ pub struct EventCaller {
     pub load_slicer_event : Option<LoadSlicerEvent>,
     pub load_furnace_event : Option<LoadFurnaceEvent>,
     pub say_event: Option<SayEvent>,
+    pub setup_boss_event : Option<SetupBossFightEvent>,
+    pub toggle_timer_event : Option<ToggleBossTimerEvent>,
+    pub win_game_event : Option<WinGameEvent>,
     pub music_change_event: Option<MusicChangeEvent>,
 }
 
@@ -59,6 +63,9 @@ impl Default for EventCaller {
             load_mixer_event : None,
             load_slicer_event : None,
             load_furnace_event: None,
+            setup_boss_event : None,
+            toggle_timer_event : None,
+            win_game_event : None,
             music_change_event: None,
         }
     }
@@ -91,6 +98,9 @@ fn update_gameflow(
     mut load_mixer_event_writer : EventWriter<LoadMixerEvent>,
     mut load_slicer_event_writer : EventWriter<LoadSlicerEvent>,
     mut say_event_writer : EventWriter<SayEvent>,
+    mut setup_boss_fight : EventWriter<SetupBossFightEvent>,
+    mut toggle_boss_timer_event : EventWriter<ToggleBossTimerEvent>,
+    mut win_game_event : EventWriter<WinGameEvent>,
     mut music_event_writer: EventWriter<MusicChangeEvent>,
 ) {
 
@@ -139,9 +149,19 @@ fn update_gameflow(
     if let Some(event) = event_caller.load_slicer_event {
         load_slicer_event_writer.send(event)
     }
+
     if let Some(event) = event_caller.say_event {
         say_event_writer.send(event)
     }
+
+    if let Some(event) = event_caller.setup_boss_event {
+        setup_boss_fight.send(event)
+    }
+
+    if let Some(event) = event_caller.toggle_timer_event {
+        toggle_boss_timer_event.send(event)
+    }
+
     if let Some(event) = event_caller.music_change_event {
         music_event_writer.send(event)
     }
@@ -373,6 +393,57 @@ impl Default for Gameflow {
 
             .add_segment(MusicChangeSegment::change_too(MusicTrack::Boss))
 
+
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("I was expecting gyome but I guess I cant expect for a perfect meal every night.")
+                .with_line("Well, If I said that you were my first disappointment of the night I would be lying.")
+                .with_line("On the way here I saw a pedestrian eating Weef Bellington with ketchup. KETCHUP!!")
+                .with_line("That is a sin worse than war, murder, and out of taste clothing. I can tell based on your wardrobe that you are a sinner.")
+                .with_line("Where is your menu? Or is the only you serve here bad service and the black plague.")
+                .with_line("Disgusting. I hope that your food comes cooked and not BLOODY RAW!")
+                .with_line("Hmph. Now, I think I have berated you enough to work up an appetite. I will order my food now.")
+                .with_line("I want you to make your best ramen. A true mark of any great chef is to incorporate foreign dished into your repertoire.")
+                .with_line("I will see your skill by eating a dish that is uncommon. Also there is a twist.")
+            )
+
+            .add_segment(StartBossFightSegment)
+
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("I will time you. You have 10 minutes to complete.")
+                .with_line("This ramen must be made with eight ingredients only. I will give you a description of what I want now.")
+                .with_line("Listen close, because I wont repeat myself.")
+                .with_line("Seriously, I WONT repeat myself.")
+                .with_line("I want a spicy ramen with a delicious broth and traditionally cooked meat.")
+                .with_line("The noodles better be made from scratch, I will be able to tell. Garnish with a green and a hearty ingredient.")
+                .with_line("Once bowled, I want it to be served with utensils and an ice cube to cool it down.")
+                .with_line("Do you understand? Good. Your time starts...")
+            )
+
+            .add_segment(ToggleBossTimerSegment)
+
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("NOW!!!!")
+            )
+
+            .add_segment(CraftingSegment::new(Element::RAMEN)
+                .with_hint("Make the ramen! What what are you waiting for?")
+                .with_hint("I told you I wouldn't repeat myself.")
+                .with_comment(&Element::PORK_BROTH, "Wow. Good use of your ingredients.")
+                .with_comment(&Element::BONE_CHOPSTICK, "I see what you are doing there. Very smart.")
+                .with_comment(&Element::BONE_CHOPSTICKS, "Perfect. I can eat with those.")
+                .with_comment(&Element::DRIED_SEAWEED, "Yes, that will do nicely.")
+                .with_comment(&Element::CHASHU, "Perfectly cooked and cut. A man class after all.")
+                .with_comment(&Element::NOODLE_DOUGH, "Ah, interesting.")
+                .with_comment(&Element::RAMEN_NOODLES, "That is a nice cut of noodles.")
+            )
+
+            .add_segment(NpcDialogueSegment::new()
+                .with_line("Wow... this... is... actually good.")
+                .with_line("I dont say that often, but this ramen is actually very good.")
+                .with_line("Full credits. This is a good dish. Well done!")
+            )
+
+            .add_segment(WinGameSegment)
         ;
 
         return game_flow;
@@ -607,6 +678,54 @@ impl Segment for GiveElementSegment {
             let duration = game.npc_data.say(commands, dialog.as_str());
             event_caller.say_event = Some(SayEvent(duration));
         }
+    }
+}
+
+//==================================================================================================
+//                    Setup Boss Fight
+//==================================================================================================
+
+pub struct StartBossFightSegment;
+
+impl Segment for StartBossFightSegment {
+    fn is_complete(&self) -> bool {
+        true
+    }
+
+    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        event_caller.setup_boss_event = Some(SetupBossFightEvent)
+    }
+}
+
+//==================================================================================================
+//                    Toggle Boss Timer Segment
+//==================================================================================================
+
+pub struct ToggleBossTimerSegment;
+
+impl Segment for ToggleBossTimerSegment {
+    fn is_complete(&self) -> bool {
+        true
+    }
+
+    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        event_caller.toggle_timer_event = Some(ToggleBossTimerEvent)
+    }
+}
+
+//==================================================================================================
+//                    Win Game Segment
+//==================================================================================================
+
+pub struct WinGameSegment;
+
+impl Segment for WinGameSegment {
+    fn is_complete(&self) -> bool {
+        true
+    }
+
+    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        event_caller.win_game_event = Some(WinGameEvent)
     }
 }
 

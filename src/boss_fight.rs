@@ -11,7 +11,7 @@ use crate::element::Element;
 use crate::GameHelper;
 use crate::helper::add_scaled_pixel_asset;
 use crate::page::MovingTo;
-use crate::ui::{Rect, Slot, ToolSlot, UiData};
+use crate::ui::{ElementCraftedEvent, Rect, Slot, ToolSlot, UiData};
 
 pub struct BossFightPlugin;
 
@@ -297,24 +297,40 @@ pub fn on_toggle_timer (
 
 pub fn on_check_elements (
     boss_slots : Query<&Slot, With<BossUiSlot>>,
-    mut on_check_elements : EventReader<CheckElementsEvent>
+    mut on_check_elements : EventReader<CheckElementsEvent>,
+    mut element_crafted_event : EventWriter<ElementCraftedEvent>,
+    mut toggle_boss_ui_event : EventWriter<ToggleBossUIEvent>,
+    mut toggle_timer_event : EventWriter<ToggleBossTimerEvent>
 ) {
     if !on_check_elements.is_empty() {
 
-        let has_pepper_flakes = false;
-        let has_chopsticks = false;
-        let has_both = false;
-        let has_hard_boiled_eggs = false;
-        let has_chashu = false;
-        let has_noodles = false;
-        let has_dried_seaweed = false;
-        let has_ice_cube = false;
+        let mut has_pepper_flakes = false;
+        let mut has_chopsticks = false;
+        let mut has_broth = false;
+        let mut has_hard_boiled_eggs = false;
+        let mut has_chashu = false;
+        let mut has_noodles = false;
+        let mut has_dried_seaweed = false;
+        let mut has_ice_cube = false;
 
 
         for slot in boss_slots.iter() {
             if let Some(element) = &slot.element {
-                //has_pepper_flakes = element == Element::PEPPER_FLAKES
+                if *element == Element::PEPPER_FLAKES { has_pepper_flakes = true }
+                if *element == Element::BONE_CHOPSTICKS { has_chopsticks = true }
+                if *element == Element::PORK_BROTH { has_broth = true }
+                if *element == Element::HARD_BOILED_EGG { has_hard_boiled_eggs = true }
+                if *element == Element::CHASHU { has_chashu = true }
+                if *element == Element::RAMEN_NOODLES { has_noodles = true }
+                if *element == Element::DRIED_SEAWEED { has_dried_seaweed = true }
+                if *element == Element::GLACIER_ICE { has_ice_cube = true }
             }
+        }
+
+        if has_pepper_flakes && has_chopsticks && has_broth && has_hard_boiled_eggs && has_chashu && has_noodles && has_dried_seaweed && has_ice_cube {
+            element_crafted_event.send(ElementCraftedEvent(Element::RAMEN));
+            toggle_boss_ui_event.send(ToggleBossUIEvent);
+            toggle_timer_event.send(ToggleBossTimerEvent)
         }
 
         on_check_elements.clear()

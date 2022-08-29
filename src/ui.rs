@@ -444,8 +444,14 @@ fn test_system(
     mut load_slicer: EventWriter<LoadSlicerEvent>,
 ) {
     if keys.just_pressed(KeyCode::A) {
-        ui_data.unsafe_add(Element::LEGEND_DAIRY.clone());
-        ui_data.unsafe_add(Element::GLACIER_ICE.clone());
+        ui_data.add_element(Element::RAMEN_NOODLES.clone());
+        ui_data.add_element(Element::BONE_CHOPSTICKS.clone());
+        ui_data.add_element(Element::HARD_BOILED_EGG.clone());
+        ui_data.add_element(Element::CHASHU.clone());
+        ui_data.add_element(Element::PORK_BROTH.clone());
+        ui_data.add_element(Element::GLACIER_ICE.clone());
+        ui_data.add_element(Element::PEPPER_FLAKES.clone());
+        ui_data.add_element(Element::DRIED_SEAWEED.clone());
 
         slot_refresh.send(RefreshSlotsEvent)
     }
@@ -554,18 +560,26 @@ fn check_for_mixer_craft(
 
                 let iden = MixerRecipeIden::new(element_1, element_2);
 
-                let recipe = registy.mixer_recipe_registry.get(&iden);
-                if recipe.is_some() {
-                    let element = recipe.as_ref().unwrap().result.clone();
-                    if !ui_data.known_elements.contains(&element) {
-                        element_crafted_event.send(ElementCraftedEvent(element.clone()));
-                        ui_data.add_element(element);
-                        refresh_slots.send(RefreshSlotsEvent);
-                    } else {
-                        craft_repeated_event.send(CraftRepeatedEvent(CraftType::MIXER))
-                    }
+                if iden == MixerRecipeIden::new(Element::BOILING_WATER, Element::RAW_PORK) {
+                    ui_data.add_element(Element::COOKED_PORK);
+                    ui_data.add_element(Element::BONE);
+                    ui_data.add_element(Element::PORK_BROTH);
+                    element_crafted_event.send(ElementCraftedEvent(Element::PORK_BROTH));
+                    refresh_slots.send(RefreshSlotsEvent);
                 } else {
-                    craft_failed_event.send(CraftFailedEvent(CraftType::MIXER))
+                    let recipe = registy.mixer_recipe_registry.get(&iden);
+                    if recipe.is_some() {
+                        let element = recipe.as_ref().unwrap().result.clone();
+                        if !ui_data.known_elements.contains(&element) {
+                            element_crafted_event.send(ElementCraftedEvent(element.clone()));
+                            ui_data.add_element(element);
+                            refresh_slots.send(RefreshSlotsEvent);
+                        } else {
+                            craft_repeated_event.send(CraftRepeatedEvent(CraftType::MIXER))
+                        }
+                    } else {
+                        craft_failed_event.send(CraftFailedEvent(CraftType::MIXER))
+                    }
                 }
 
                 slot_1.element = None;
