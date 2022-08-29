@@ -7,7 +7,7 @@ use crate::boss_fight::{SetupBossFightEvent, ToggleBossTimerEvent, WinGameEvent}
 use crate::audio::{SayEvent, MusicTrack, MusicChangeEvent};
 use crate::element::Element;
 use crate::game::GameManager;
-use crate::npc::{Npc, NpcClickEvent, NpcKind, NpcSprite, NpcText, Say};
+use crate::npc::{Npc, NpcClickEvent, NPCDropEvent, NpcKind, NpcSprite, NpcText, Say};
 use crate::ui::{CraftType, ElementCraftedEvent, InsertElementEvent, LoadFurnaceEvent, LoadMixerEvent, LoadSlicerEvent, NPC_LEVEL};
 
 pub struct GameflowPlugin;
@@ -91,6 +91,7 @@ fn update_gameflow(
     //Events Listeners
     mut on_npc_click: EventReader<NpcClickEvent>,
     mut on_item_craft: EventReader<ElementCraftedEvent>,
+    mut on_npc_drop : EventReader<NPCDropEvent>,
 
     //Event Writers
     mut insert_element_event_writer: EventWriter<InsertElementEvent>,
@@ -126,6 +127,10 @@ fn update_gameflow(
 
         for event in on_item_craft.iter() {
             current.on_item_crafted(&mut commands, &asset_server, &mut game, &mut event_caller, event.0.clone());
+        }
+
+        for event in on_npc_drop.iter() {
+            current.on_npc_drop(&mut commands, &asset_server, &mut game, &mut event_caller, event.0.clone())
         }
 
         if current.is_complete() {
@@ -199,7 +204,7 @@ impl Default for Gameflow {
 
             .add_segment(LoadToolSegment::new(CraftType::FURNACE))
 
-            .add_segment(CraftingSegment::new(Element::GLACIER_ICE.clone())
+            .add_segment(CraftingSegment::new(Element::GLACIER_ICE.clone(), true)
                 .with_hint("Go ahead and try to make ice! If you click on me I will give hints.")
                 .with_hint("You can drag items around and put them into the tools in the middle.")
                 .with_hint("Youll want to use the furnace for this. If you put something cold in the bottom slot, the item on top will freeze!")
@@ -214,7 +219,7 @@ impl Default for Gameflow {
                 .with_line("Oh, its over there.")
             )
 
-            .add_segment(CraftingSegment::new(Element::SHAVED_ICE.clone())
+            .add_segment(CraftingSegment::new(Element::SHAVED_ICE.clone(), true)
                 .with_hint("Alright, go a head and make some shaved ice.")
                 .with_hint("You shouldnt need a hint for this one.")
                 .with_hint("Really?")
@@ -233,11 +238,12 @@ impl Default for Gameflow {
                 .with_line("And here is the mixer.")
             )
 
-            .add_segment(CraftingSegment::new(Element::UTTER_ICE_CREAM.clone())
+            .add_segment(CraftingSegment::new(Element::UTTER_ICE_CREAM.clone(), false)
                 .with_hint("Now make that ice cream.")
                 .with_hint("It takes two ingredients.")
                 .with_hint("You also need to use the mixing bowl.")
                 .with_hint("Put the shaved ice and legend dairy into the mixing bowl.")
+                .with_comment(&Element::UTTER_ICE_CREAM, "Nice. Now give that to me!")
             )
 
             .add_segment(NpcDialogueSegment::new()
@@ -279,12 +285,13 @@ impl Default for Gameflow {
                 .with_line("That is what I am here for! One of your best sandwiches!")
             )
 
-            .add_segment(CraftingSegment::new(Element::ICE_CREAM_SANDWICH.clone())
+            .add_segment(CraftingSegment::new(Element::ICE_CREAM_SANDWICH, false)
                 .with_hint("So please make me a sandwich of some sort!")
                 .with_hint("My favorite part of any sandwich is the bread. Good bread is necessary for a good sandwich.")
                 .with_hint("Ill take any type of sandwich, really!")
                 .with_comment(&Element::ELVEN_BREAD, "Yes! Any good sandwich needs some bread!")
                 .with_comment(&Element::BREAD_DOUGH, "A step in the right direction! You could be a knight yourself with intuition like that!")
+                .with_comment(&Element::ICE_CREAM_SANDWICH, "That is what I require! Hand it over at once!")
             )
 
             .add_segment(NpcDialogueSegment::new()
@@ -320,7 +327,7 @@ impl Default for Gameflow {
                 .with_line("... something creamy and something crunchy ... ")
             )
 
-            .add_segment(CraftingSegment::new(Element::SALAD.clone())
+            .add_segment(CraftingSegment::new(Element::SALAD.clone(), false)
                 .with_hint("... Could you please make me one now? ...")
                 .with_hint("... a salad with a creamy and crunchy topping ...")
                 .with_hint("... could you please hurry? I need to get back to the RANCH ...")
@@ -329,6 +336,7 @@ impl Default for Gameflow {
                 .with_comment(&Element::ELVEN_TOAST, "... mmmmmm smells good ...")
                 .with_comment(&Element::DICED_CROUTONS, "... those would add the most perfect crunch to my salad ...")
                 .with_comment(&Element::RANCH, "... that seems yummy ... perfect for my salad ...")
+                .with_comment(&Element::SALAD, "... oh wow that looks so good ... can I please have it?")
             )
 
             .add_segment(NpcDialogueSegment::new()
@@ -360,7 +368,7 @@ impl Default for Gameflow {
                 .with_line("Specifically I would like a breakfast sandwich with some heat to it.")
             )
 
-            .add_segment(CraftingSegment::new(Element::CUT_SANDWICH.clone())
+            .add_segment(CraftingSegment::new(Element::CUT_SANDWICH.clone(), false)
                 .with_hint("So if you wouldnt mind, make me that sandwich.")
                 .with_hint("A breakfast sandwich with a little bit of heat.")
                 .with_hint("Now, mind you I dont want it too spicy.")
@@ -372,6 +380,7 @@ impl Default for Gameflow {
                 .with_comment(&Element::SPICY_SPREAD, "That will be the perfect amount of heat! Put it on the sandwich!")
                 .with_comment(&Element::SPICY_TOAST, "Now all that needs is the filling!")
                 .with_comment(&Element::SANDWICH, "That is a legendary sandwich, but you need to do one more thing to make it perfect...")
+                .with_comment(&Element::CUT_SANDWICH, "Ah, how divine! A cut breakfast sandwich. I will take that now!")
             )
 
             .add_segment(NpcDialogueSegment::new()
@@ -423,7 +432,7 @@ impl Default for Gameflow {
                 .with_line("NOW!!!!")
             )
 
-            .add_segment(CraftingSegment::new(Element::RAMEN)
+            .add_segment(CraftingSegment::new(Element::RAMEN, false)
                 .with_hint("Make the ramen! What what are you waiting for?")
                 .with_hint("I told you I wouldn't repeat myself.")
                 .with_comment(&Element::PORK_BROTH, "Wow. Good use of your ingredients.")
@@ -433,6 +442,7 @@ impl Default for Gameflow {
                 .with_comment(&Element::CHASHU, "Perfectly cooked and cut. A man class after all.")
                 .with_comment(&Element::NOODLE_DOUGH, "Ah, interesting.")
                 .with_comment(&Element::RAMEN_NOODLES, "That is a nice cut of noodles.")
+                .with_comment(&Element::RAMEN, "That is the ticket! Now let me taste it.")
             )
 
             .add_segment(NpcDialogueSegment::new()
@@ -560,18 +570,20 @@ pub struct CraftingSegment {
     hints : Vec<String>,
     comments : HashMap<Element, String>,
     is_thing_crafted : bool,
-    current_hint : usize
+    current_hint : usize,
+    continue_on_craft : bool
 }
 
 impl CraftingSegment {
 
-    pub fn new(element : Element) -> Self {
+    pub fn new(element : Element, continue_on_craft : bool) -> Self {
         CraftingSegment {
             goal : element,
             hints : Vec::new(),
             comments : HashMap::new(),
             is_thing_crafted : false,
-            current_hint : 0
+            current_hint : 0,
+            continue_on_craft
         }
     }
 
@@ -601,19 +613,15 @@ impl Segment for CraftingSegment {
         self.is_thing_crafted
     }
 
-    fn on_item_crafted (
-        &mut self, commands: &mut Commands,
-        asset_server: &Res<AssetServer>,
-        game: &mut ResMut<GameManager>,
-        event_caller : &mut EventCaller,
-        element: Element
-    ) {
-        if element == self.goal {
-            self.is_thing_crafted = true;
-        }
-        if let Some(comment) = self.comments.get(&element) {
-            let duration = game.npc_data.say(commands, comment.as_str());
-            event_caller.say_event = Some(SayEvent(duration));
+    fn on_item_crafted(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller, element: Element) {
+        if self.continue_on_craft {
+            if element == self.goal {
+                self.is_thing_crafted = true;
+            }
+            if let Some(comment) = self.comments.get(&element) {
+                let duration = game.npc_data.say(commands, comment.as_str());
+                event_caller.say_event = Some(SayEvent(duration));
+            }
         }
     }
 
@@ -624,6 +632,24 @@ impl Segment for CraftingSegment {
         event_caller : &mut EventCaller
     ) {
         self.cycle_hint(commands, game, event_caller)
+    }
+
+    fn on_npc_drop(
+        &mut self, commands: &mut Commands,
+        asset_server: &Res<AssetServer>,
+        game: &mut ResMut<GameManager>,
+        event_caller: &mut EventCaller,
+        element: Element
+    ) {
+        if !self.continue_on_craft {
+            if element == self.goal {
+                self.is_thing_crafted = true;
+            }
+            if let Some(comment) = self.comments.get(&element) {
+                let duration = game.npc_data.say(commands, comment.as_str());
+                event_caller.say_event = Some(SayEvent(duration));
+            }
+        }
     }
 
     fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {

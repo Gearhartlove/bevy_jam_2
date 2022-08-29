@@ -80,7 +80,7 @@ impl Plugin for UiPlugin {
 pub struct UpdateSlotEvent(u32, Option<Element>);
 
 #[derive(Debug)]
-pub struct DropElementEvent(Vec2, Element);
+pub struct DropElementEvent(pub Vec2, pub Element);
 
 #[derive(Debug)]
 pub struct SlotEnteredEvent(u32);

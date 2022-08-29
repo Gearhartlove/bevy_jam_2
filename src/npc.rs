@@ -13,7 +13,7 @@ use crate::element::Element;
 use crate::game::{GameManager, GameStatus};
 use crate::game::GameStatus::QuestComplete;
 use crate::quest::Quest;
-use crate::ui::{NPC_LEVEL, Rect, Slot, TitleText};
+use crate::ui::{DropElementEvent, NPC_LEVEL, Rect, Slot, TitleText};
 
 pub struct NpcPlugin;
 
@@ -21,11 +21,13 @@ impl Plugin for NpcPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_event::<NpcClickEvent>()
+            .add_event::<NPCDropEvent>()
             .init_resource::<NPCData>()
             .add_startup_system(setup_npc_assets)
             .add_system(click_npc)
             .add_system(on_npc_hover)
-            .add_system(dialogue);
+            .add_system(dialogue)
+            .add_system(on_npc_drop);
     }
 }
 
@@ -382,6 +384,24 @@ fn on_npc_hover(
                 let index = game.npc_data.current_npc;
                 visibility.is_visible = true;
                 text.sections[0].value = game.npc_data.npcs.get(index).unwrap().name.clone();
+            }
+        }
+    }
+}
+
+pub struct NPCDropEvent(pub Element);
+
+fn on_npc_drop (
+    mut query: Query<(&GlobalTransform, &Sprite), With<NpcSprite>>,
+    mut drop_event : EventReader<DropElementEvent>,
+    mut npc_drop_event : EventWriter<NPCDropEvent>
+) {
+    if let Ok((transform, sprite)) = query.get_single_mut() {
+        let rect = Slot::generate_rect(transform, sprite);
+
+        for event in drop_event.iter() {
+            if rect.is_within(event.0) {
+                npc_drop_event.send(NPCDropEvent(event.1.clone()))
             }
         }
     }
