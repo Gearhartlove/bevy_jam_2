@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use bevy::text::Text2dBounds;
 use bevy::utils::HashMap;
 use bevy::utils::tracing::event;
-use crate::audio::SayEvent;
+use crate::audio::{SayEvent, MusicTrack, MusicChangeEvent};
 use crate::element::Element;
 use crate::game::GameManager;
 use crate::npc::{Npc, NpcClickEvent, NpcKind, NpcSprite, NpcText, Say};
@@ -48,6 +48,7 @@ pub struct EventCaller {
     pub load_slicer_event : Option<LoadSlicerEvent>,
     pub load_furnace_event : Option<LoadFurnaceEvent>,
     pub say_event: Option<SayEvent>,
+    pub music_change_event: Option<MusicChangeEvent>,
 }
 
 impl Default for EventCaller {
@@ -57,7 +58,8 @@ impl Default for EventCaller {
             say_event: None,
             load_mixer_event : None,
             load_slicer_event : None,
-            load_furnace_event: None
+            load_furnace_event: None,
+            music_change_event: None,
         }
     }
 }
@@ -89,6 +91,7 @@ fn update_gameflow(
     mut load_mixer_event_writer : EventWriter<LoadMixerEvent>,
     mut load_slicer_event_writer : EventWriter<LoadSlicerEvent>,
     mut say_event_writer : EventWriter<SayEvent>,
+    mut music_event_writer: EventWriter<MusicChangeEvent>,
 ) {
 
     //println!("{} | {}", gameflow.current, gameflow.segments.len());
@@ -138,6 +141,9 @@ fn update_gameflow(
     }
     if let Some(event) = event_caller.say_event {
         say_event_writer.send(event)
+    }
+    if let Some(event) = event_caller.music_change_event {
+        music_event_writer.send(event)
     }
 }
 
@@ -362,6 +368,9 @@ impl Default for Gameflow {
                     "So, you are the one that will be cooking for me tonight?".to_string()
                 ]
             ))
+
+            .add_segment(MusicChangeSegment::change_too(MusicTrack::Boss))
+
         ;
 
         return game_flow;
@@ -724,5 +733,33 @@ impl Segment for TransitionSegment {
         let phrase = self.get_next_phrase();
         let duration = game.npc_data.say(commands, phrase.as_str());
         event_caller.say_event = Some(SayEvent(duration));
+    }
+}
+
+//==================================================================================================
+//                    MusicTransitionSegment
+//==================================================================================================
+struct MusicChangeSegment {
+    change_too: MusicTrack,
+    music_changed: bool
+}
+
+impl MusicChangeSegment {
+    fn change_too(track: MusicTrack) -> Self {
+        Self {
+            change_too: track,
+            music_changed: false
+        }
+    }
+}
+
+impl Segment for MusicChangeSegment {
+    fn is_complete(&self) -> bool {
+        self.music_changed
+    }
+
+    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        event_caller.music_change_event = Some(MusicChangeEvent(self.change_too.clone()));
+        self.music_changed = true;
     }
 }

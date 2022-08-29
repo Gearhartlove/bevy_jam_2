@@ -1,11 +1,14 @@
 use bevy::prelude::*;
 use bevy::text::Text2dBounds;
 use bevy_inspector_egui::RegisterInspectable;
+use bevy_kira_audio::{AudioChannel, AudioControl};
 use bevy_prototype_debug_lines::DebugLines;
+use rand::{Rng, RngCore};
 use crate::boss_fight::{Clickable, ClickableBundle, on_click};
 use crate::element::Element;
 use crate::game::GameManager;
 use crate::{BossFightPlugin, GameHelper};
+use crate::audio::SfxChannel;
 use crate::ui::{StaticClickable, ElementInfoEvent, Rect, SLOT_LEVEL, TEXT_LEVEL, UI_LEVEL};
 
 pub struct PagePlugin;
@@ -38,6 +41,7 @@ fn listen_for_right_click(
     mut query_sprite: Query<(&mut Handle<Image>, &mut Sprite), With<PageItemSprite>>,
     mut query_title: Query<&mut Text, (With<PageTitle>, Without<PageText>)>,
     mut query_text: Query<&mut Text, (With<PageText>, Without<PageTitle>)>,
+    mut page_turn_audio: Res<AudioChannel<SfxChannel>>,
 ) {
     for info in element_info_event.iter() {
         let element: &Element = &info.0;
@@ -54,6 +58,22 @@ fn listen_for_right_click(
 
                         // make page move left
                         commands.entity(game.pages[0]).insert(MovingTo(PagePlugin::ON_SCREEN_POS));
+
+                        // play sound
+                        let mut rand = rand::thread_rng();
+                        let r = rand.gen_range(0..3);
+                        match r {
+                            0 => {
+                                page_turn_audio.play(asset_server.load("sounds/page-flip-01.mp3")).with_volume(0.4);
+                            },
+                            1 => {
+                                page_turn_audio.play(asset_server.load("sounds/page-flip-02.mp3")).with_volume(0.4);
+                            },
+                            2 => {
+                                page_turn_audio.play(asset_server.load("sounds/page-flip-03.mp3")).with_volume(0.4);
+                            },
+                            _ => {}
+                        }
                     }
                 }
             }
@@ -106,8 +126,6 @@ struct Page;
 struct PageItemSprite;
 
 fn setup(mut game: ResMut<GameManager>, mut commands: Commands, asset_server: Res<AssetServer>) {
-
-
     let parent = commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
