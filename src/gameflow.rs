@@ -505,12 +505,13 @@ impl CraftingSegment {
         self
     }
 
-    pub fn cycle_hint(&mut self, commands : &mut Commands, game : &mut ResMut<GameManager>) {
+    pub fn cycle_hint(&mut self, commands : &mut Commands, game : &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
         if self.current_hint >= self.hints.len() {
             self.current_hint = 0
         }
         let text = self.hints.get(self.current_hint).unwrap();
-        game.npc_data.say(commands, text.as_str());
+        let duration = game.npc_data.say(commands, text.as_str());
+        event_caller.say_event = Some(SayEvent(duration));
         self.current_hint += 1;
     }
 }
@@ -542,11 +543,11 @@ impl Segment for CraftingSegment {
         game: &mut ResMut<GameManager>,
         event_caller : &mut EventCaller
     ) {
-        self.cycle_hint(commands, game)
+        self.cycle_hint(commands, game, event_caller)
     }
 
     fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
-        self.cycle_hint(commands, game);
+        self.cycle_hint(commands, game, event_caller);
         game.can_use_ui = true;
     }
 
@@ -592,7 +593,8 @@ impl Segment for GiveElementSegment {
     fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
         event_caller.insert_element_event = Some(InsertElementEvent(self.element.clone()));
         if let Some(dialog) = &self.optional_dialog {
-            game.npc_data.say(commands, dialog.as_str());
+            let duration = game.npc_data.say(commands, dialog.as_str());
+            event_caller.say_event = Some(SayEvent(duration));
         }
     }
 }
@@ -638,7 +640,8 @@ impl Segment for LoadToolSegment {
             CraftType::FURNACE => event_caller.load_furnace_event = Some(LoadFurnaceEvent),
         }
         if let Some(dialog) = &self.optional_dialog {
-            game.npc_data.say(commands, dialog.as_str());
+            let duration = game.npc_data.say(commands, dialog.as_str());
+            event_caller.say_event = Some(SayEvent(duration));
         }
     }
 }
@@ -719,6 +722,7 @@ impl Segment for TransitionSegment {
             game.npc_data.spawn_next_npc()
         }
         let phrase = self.get_next_phrase();
-        game.npc_data.say(commands, phrase.as_str());
+        let duration = game.npc_data.say(commands, phrase.as_str());
+        event_caller.say_event = Some(SayEvent(duration));
     }
 }
