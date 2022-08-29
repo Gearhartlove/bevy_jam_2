@@ -174,6 +174,7 @@ impl Default for Gameflow {
 
             .add_segment(NpcDialogueSegment::new()
                 .with_line("To see what an item is, you can mouse over it. Right clicking will show its page in the fantastical cook book.")
+                .with_line("If you ever forget a recipe, I would check there.")
                 .with_line("Lets see, first thing you need for ice cream is, well, ice.")
             )
 
@@ -241,7 +242,8 @@ impl Default for Gameflow {
 
             .add_segment(TransitionSegment::new(
               vec![
-                 "Good luck... you will need it...".to_string()
+                 "Good luck... you will need it...".to_string(),
+                  "And remember that book of yours, you can never know too much about the ingredients you cook with.".to_string()
               ],
                 vec![
                     "Hello! My name is Sir Connrad and I am in desperate need of adventuring food.".to_string()
@@ -287,7 +289,7 @@ impl Default for Gameflow {
             //Stage 3
             .add_segment(NpcDialogueSegment::new()
                 .with_line("... I took my time coming to order ... that last guy was loud ... ")
-                .with_line("... My name is Wilbur. I am a pig farmer from around here ... ")
+                .with_line("... My name is Pumpkinhead, I am a pig farmer from around here ... ")
                 .with_line("... please dont ask about the pumpkin, itll make me shy ... ")
             )
 
@@ -303,10 +305,11 @@ impl Default for Gameflow {
             .add_segment(CraftingSegment::new(Element::SALAD.clone())
                 .with_hint("... Could you please make me one now? ...")
                 .with_hint("... a salad with a creamy and crunchy topping ...")
-                .with_hint("... could you please hurry? I need to get back to the ranch ...")
+                .with_hint("... I want those crunchy things ... crawdads ... cruonans ... ahh, something like that ...")
+                .with_hint("... could you please hurry? I need to get back to the RANCH ...")
                 .with_hint("... I like the toppings mixed together ...")
                 .with_comment(&Element::MAYO, "... that seems creamy, but to solid for a salad ...")
-                .with_comment(&Element::ELVEN_TOAST, "... mmmmmm smells good ...")
+                .with_comment(&Element::ELVEN_TOAST, "... that smells good, but that wont fit on my salad ...")
                 .with_comment(&Element::DICED_CROUTONS, "... those would add the most perfect crunch to my salad ...")
                 .with_comment(&Element::RANCH, "... that seems yummy ... perfect for my salad ...")
             )
@@ -337,13 +340,12 @@ impl Default for Gameflow {
                 .with_line("But this problem was no match for the valiant Sir Conrad! I turn problems into mincemeat!")
                 .with_line("My solution being thus ... eat the sandwich given prier and come back for another, more substantial morsel.")
                 .with_line("So my request is as follows ... I would like another sandwich. This one I want to be more meaty.")
-                .with_line("Specifically I would like a breakfast sandwich with some heat to it.")
+                .with_line("Specifically I would like a breakfast sandwich with a spicy spread.")
             )
 
             .add_segment(CraftingSegment::new(Element::CUT_SANDWICH.clone())
-                .with_hint("So if you wouldnt mind, make me that sandwich.")
-                .with_hint("A breakfast sandwich with a little bit of heat.")
-                .with_hint("Now, mind you I dont want it too spicy.")
+                .with_hint("I am in need of a breakfast sandwich with a little bit of heat.")
+                .with_hint("Mhhmm. That cut of pork looks mighty delicious!")
                 .with_comment(&Element::PEPPER_FLAKES, "Yes not the whole pepper, just a bit of it. However, I still think those flakes are going to be hard to sallow...")
                 .with_comment(&Element::SCRAMBLED_EGG, "What a good filling for a breakfast sandwich! I think it is missing a protein though.")
                 .with_comment(&Element::RAW_BACON, "Now that looks intriguing! Sliced pork? How novel.")
