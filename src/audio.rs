@@ -6,20 +6,30 @@ use crate::npc::{Npc, NpcKind, Say};
 
 pub struct AudioPlugin;
 
+#[derive(Clone)]
+pub enum MusicTrack {
+    Background,
+    Boss,
+}
+
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_event::<SayEvent>()
+            .add_event::<MusicChangeEvent>()
             .init_resource::<AudioManager>()
             .add_plugin(bevy_kira_audio::AudioPlugin)
             .add_audio_channel::<DialogueChannel>()
+            .add_audio_channel::<SfxChannel>()
             .add_startup_system(start_background_audio)
             .add_system(play_dialogue_voice)
-            .add_system(stop_dialogue_voice);
+            .add_system(stop_dialogue_voice)
+            .add_system(start_boss_audio);
     }
 }
 
 struct DialogueChannel;
+pub struct SfxChannel;
 
 struct AudioManager {
     total_say_duration: f64,
@@ -49,13 +59,25 @@ fn start_background_audio(asset_server: Res<AssetServer>, audio: Res<Audio>) {
 fn start_boss_audio(
     asset_server: Res<AssetServer>,
     audio: Res<Audio>,
-    on_boss_enter: EventReader<SetupBossFightEvent>
+    mut on_boss_enter: EventReader<MusicChangeEvent>
 ) {
     if !on_boss_enter.is_empty() {
+        println!("change audio");
         audio.stop();
-        audio.play(asset_server.load("sounds/boss_music.wav")).looped()
-            .loop_from(2.0)
-            .with_volume(0.2);
+        for event in on_boss_enter.iter() {
+            match event.0 {
+                MusicTrack::Background => {
+                    audio.play(asset_server.load("sounds/background_music.wav")).looped()
+                        .loop_from(7.0)
+                        .with_volume(0.2);
+                },
+                MusicTrack::Boss => {
+                    audio.play(asset_server.load("sounds/boss_music.wav")).looped()
+                        .loop_from(2.0)
+                        .with_volume(0.15);
+                },
+            }
+        }
     }
 }
 
@@ -108,3 +130,5 @@ fn stop_dialogue_voice(
         dialogue.stop();
     }
 }
+
+pub struct MusicChangeEvent(pub MusicTrack);

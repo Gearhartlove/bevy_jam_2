@@ -3,8 +3,8 @@ use bevy::prelude::*;
 use bevy::text::Text2dBounds;
 use bevy::utils::HashMap;
 use bevy::utils::tracing::event;
-use crate::audio::SayEvent;
 use crate::boss_fight::{SetupBossFightEvent, ToggleBossTimerEvent, WinGameEvent};
+use crate::audio::{SayEvent, MusicTrack, MusicChangeEvent};
 use crate::element::Element;
 use crate::game::GameManager;
 use crate::npc::{Npc, NpcClickEvent, NpcKind, NpcSprite, NpcText, Say};
@@ -51,7 +51,8 @@ pub struct EventCaller {
     pub say_event: Option<SayEvent>,
     pub setup_boss_event : Option<SetupBossFightEvent>,
     pub toggle_timer_event : Option<ToggleBossTimerEvent>,
-    pub win_game_event : Option<WinGameEvent>
+    pub win_game_event : Option<WinGameEvent>,
+    pub music_change_event: Option<MusicChangeEvent>,
 }
 
 impl Default for EventCaller {
@@ -64,7 +65,8 @@ impl Default for EventCaller {
             load_furnace_event: None,
             setup_boss_event : None,
             toggle_timer_event : None,
-            win_game_event : None
+            win_game_event : None,
+            music_change_event: None,
         }
     }
 }
@@ -99,6 +101,7 @@ fn update_gameflow(
     mut setup_boss_fight : EventWriter<SetupBossFightEvent>,
     mut toggle_boss_timer_event : EventWriter<ToggleBossTimerEvent>,
     mut win_game_event : EventWriter<WinGameEvent>,
+    mut music_event_writer: EventWriter<MusicChangeEvent>,
 ) {
 
     //println!("{} | {}", gameflow.current, gameflow.segments.len());
@@ -157,6 +160,10 @@ fn update_gameflow(
 
     if let Some(event) = event_caller.toggle_timer_event {
         toggle_boss_timer_event.send(event)
+    }
+
+    if let Some(event) = event_caller.music_change_event {
+        music_event_writer.send(event)
     }
 }
 
@@ -381,6 +388,9 @@ impl Default for Gameflow {
                     "So, you are the one that will be cooking for me tonight?".to_string()
                 ]
             ))
+
+            .add_segment(MusicChangeSegment::change_too(MusicTrack::Boss))
+
 
             .add_segment(NpcDialogueSegment::new()
                 .with_line("I was expecting gyome but I guess I cant expect for a perfect meal every night.")
@@ -842,5 +852,33 @@ impl Segment for TransitionSegment {
         let phrase = self.get_next_phrase();
         let duration = game.npc_data.say(commands, phrase.as_str());
         event_caller.say_event = Some(SayEvent(duration));
+    }
+}
+
+//==================================================================================================
+//                    MusicTransitionSegment
+//==================================================================================================
+struct MusicChangeSegment {
+    change_too: MusicTrack,
+    music_changed: bool
+}
+
+impl MusicChangeSegment {
+    fn change_too(track: MusicTrack) -> Self {
+        Self {
+            change_too: track,
+            music_changed: false
+        }
+    }
+}
+
+impl Segment for MusicChangeSegment {
+    fn is_complete(&self) -> bool {
+        self.music_changed
+    }
+
+    fn on_segment_start(&mut self, commands: &mut Commands, asset_server: &Res<AssetServer>, game: &mut ResMut<GameManager>, event_caller: &mut EventCaller) {
+        event_caller.music_change_event = Some(MusicChangeEvent(self.change_too.clone()));
+        self.music_changed = true;
     }
 }
