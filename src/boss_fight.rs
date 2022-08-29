@@ -3,6 +3,7 @@ use bevy::ecs::schedule::ShouldRun::No;
 use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
 use bevy::text::Text2dBounds;
+use bevy::utils::tracing::event;
 use bevy_inspector_egui::egui::{DragValue, Ui};
 use bevy_inspector_egui::{Context, Inspectable, RegisterInspectable};
 use bevy_prototype_debug_lines::DebugLines;
@@ -16,16 +17,19 @@ pub struct BossFightPlugin;
 impl Plugin for BossFightPlugin {
     fn build(&self, app: &mut App) {
         app
-            .register_inspectable::<Clickable>()
+            .register_inspectable::<Clickable<ToggleBossUIEvent>>()
+            .register_inspectable::<Clickable<CheckElementsEvent>>()
             .add_event::<SetupBossFightEvent>()
             .add_event::<ToggleBossUIEvent>()
             .add_event::<ToggleBossTimerEvent>()
             .add_event::<WinGameEvent>()
             .add_event::<LoseGameEvent>()
+            .add_event::<CheckElementsEvent>()
             .init_resource::<BossUIData>()
             .add_system(test_system)
             .add_system(tick_clock)
             .add_system(on_click::<ToggleBossUIEvent>)
+            .add_system(on_click::<CheckElementsEvent>)
             .add_system_to_stage(CoreStage::PostUpdate, setup_boss_fight)
             .add_system_to_stage(CoreStage::PostUpdate, on_toggle_timer)
             .add_system_to_stage(CoreStage::PostUpdate, on_toggle_boss_ui)
@@ -40,26 +44,31 @@ impl Plugin for BossFightPlugin {
 #[derive(Component)]
 pub struct BossUiSlot;
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct BossToggleButton;
+
+#[derive(Component, Default)]
+pub struct BossDoneButton;
 
 #[derive(Component)]
 pub struct TimeCounter;
 
 #[derive(Component, Clone)]
-pub struct Clickable {
-    rect : Rect
+pub struct Clickable<T> where T : Sized + Default {
+    rect : Rect,
+    event : T
 }
 
-impl Default for Clickable {
+impl <T> Default for Clickable<T> where T : Sized + Default {
     fn default() -> Self {
         Clickable {
-            rect : Rect::new(-10.0, 10.0, 10.0, -10.0)
+            rect : Rect::new(-10.0, 10.0, 10.0, -10.0),
+            event : T::default()
         }
     }
 }
 
-impl Inspectable for Clickable {
+impl <T> Inspectable for Clickable<T> where T : Sized + Default {
     type Attributes = ();
 
     fn ui(&mut self, ui: &mut Ui, options: Self::Attributes, context: &mut Context) -> bool {
@@ -89,29 +98,29 @@ pub struct BossTimer {
 //                              Bundles
 //=================================================================================================
 
-#[derive(Bundle, Clone)]
-pub struct ClickableBundle {
-    transform : Transform,
-    global_transform : GlobalTransform,
-    clickable : Clickable
-}
-
-impl Default for ClickableBundle {
-    fn default() -> Self {
-        ClickableBundle {
-            transform : Transform::default(),
-            global_transform : GlobalTransform::default(),
-            clickable : Clickable::default()
-        }
-    }
-}
+// #[derive(Bundle, Clone)]
+// pub struct ClickableBundle {
+//     transform : Transform,
+//     global_transform : GlobalTransform,
+//     clickable : Clickable
+// }
+//
+// impl Default for ClickableBundle {
+//     fn default() -> Self {
+//         ClickableBundle {
+//             transform : Transform::default(),
+//             global_transform : GlobalTransform::default(),
+//             clickable : Clickable::default()
+//         }
+//     }
+// }
 
 
 //=================================================================================================
 //                              Events
 //=================================================================================================
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct SetupBossFightEvent;
 
 #[derive(Default, Debug)]
@@ -119,6 +128,9 @@ pub struct ToggleBossUIEvent;
 
 #[derive(Default, Debug)]
 pub struct ToggleBossTimerEvent;
+
+#[derive(Default, Debug)]
+pub struct CheckElementsEvent;
 
 #[derive(Default, Debug)]
 pub struct LoseGameEvent;
@@ -168,10 +180,19 @@ pub fn setup_boss_fight (
             transform : Transform::from_xyz(-164.0, 288.0, 1.0),
             ..default()
         }).insert(Clickable {
-            rect : Rect::new(-38.0, 38.0, 38.0, -38.0)
+            rect : Rect::new(-38.0, 38.0, 38.0, -38.0),
+            event : ToggleBossUIEvent
         }).insert(BossToggleButton).id();
 
-        comm
+        let done_button = commands.spawn()
+            .insert(Transform::from_xyz(0.0, -316.0, 1.0))
+            .insert(GlobalTransform::default())
+            .insert(Clickable {
+                rect : Rect::new(-136.0, 28.0, 136.0, -28.0),
+                event : CheckElementsEvent
+            })
+            .insert(BossDoneButton)
+            .id();
 
         let text_style = TextStyle {
             font: asset_server.load("fonts/pixel_font.ttf"),
@@ -196,7 +217,7 @@ pub fn setup_boss_fight (
             timer : Timer::new(Duration::from_secs(600), false)
         }).id();
 
-        commands.entity(parent.clone()).push_children(&[click, clock_text]);
+        commands.entity(parent.clone()).push_children(&[click, clock_text, done_button]);
 
         add_slot_array(&mut commands, -64.0, 168.0, 2, 4, 128.0, &mut ui.amount_of_slots_indices, &parent);
 
@@ -272,6 +293,11 @@ pub fn on_toggle_timer (
     }
 }
 
+// pub fn on_check_elements (
+//     boss_slots : Query<&mut BossUiSlot>,
+//
+// )
+
 //=================================================================================================
 //                              Systems
 //=================================================================================================
@@ -329,7 +355,7 @@ pub fn tick_clock (
 
 pub fn on_click<T> (
     mut lines : ResMut<DebugLines>,
-    clickables : Query<(&Clickable, &GlobalTransform), With<Transform>>,
+    clickables : Query<(&Clickable<T>, &GlobalTransform), With<Transform>>,
     game_helper : Res<GameHelper>,
     clicks : Res<Input<MouseButton>>,
     mut event_writer : EventWriter<T>
