@@ -7,6 +7,7 @@ use bevy::utils::tracing::event;
 use bevy_inspector_egui::egui::{DragValue, Ui};
 use bevy_inspector_egui::{Context, Inspectable, RegisterInspectable};
 use bevy_prototype_debug_lines::DebugLines;
+use crate::element::Element;
 use crate::GameHelper;
 use crate::helper::add_scaled_pixel_asset;
 use crate::page::MovingTo;
@@ -33,6 +34,7 @@ impl Plugin for BossFightPlugin {
             .add_system_to_stage(CoreStage::PostUpdate, setup_boss_fight)
             .add_system_to_stage(CoreStage::PostUpdate, on_toggle_timer)
             .add_system_to_stage(CoreStage::PostUpdate, on_toggle_boss_ui)
+            .add_system_to_stage(CoreStage::PostUpdate, on_check_elements)
         ;
     }
 }
@@ -293,10 +295,31 @@ pub fn on_toggle_timer (
     }
 }
 
-// pub fn on_check_elements (
-//     boss_slots : Query<&mut BossUiSlot>,
-//
-// )
+pub fn on_check_elements (
+    boss_slots : Query<&Slot, With<BossUiSlot>>,
+    mut on_check_elements : EventReader<CheckElementsEvent>
+) {
+    if !on_check_elements.is_empty() {
+
+        let has_pepper_flakes = false;
+        let has_chopsticks = false;
+        let has_both = false;
+        let has_hard_boiled_eggs = false;
+        let has_chashu = false;
+        let has_noodles = false;
+        let has_dried_seaweed = false;
+        let has_ice_cube = false;
+
+
+        for slot in boss_slots.iter() {
+            if let Some(element) = &slot.element {
+                //has_pepper_flakes = element == Element::PEPPER_FLAKES
+            }
+        }
+
+        on_check_elements.clear()
+    }
+}
 
 //=================================================================================================
 //                              Systems
