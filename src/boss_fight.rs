@@ -98,22 +98,22 @@ pub struct BossTimer {
 //                              Bundles
 //=================================================================================================
 
-// #[derive(Bundle, Clone)]
-// pub struct ClickableBundle {
-//     transform : Transform,
-//     global_transform : GlobalTransform,
-//     clickable : Clickable
-// }
-//
-// impl Default for ClickableBundle {
-//     fn default() -> Self {
-//         ClickableBundle {
-//             transform : Transform::default(),
-//             global_transform : GlobalTransform::default(),
-//             clickable : Clickable::default()
-//         }
-//     }
-// }
+#[derive(Bundle, Clone)]
+pub struct ClickableBundle<T> where T : Default + Sized {
+    transform : Transform,
+    global_transform : GlobalTransform,
+    clickable : Clickable<T>
+}
+
+impl <T> Default for ClickableBundle<T> where T : Default + Sized {
+    fn default() -> Self {
+        ClickableBundle {
+            transform : Transform::default(),
+            global_transform : GlobalTransform::default(),
+            clickable : Clickable::default()
+        }
+    }
+}
 
 
 //=================================================================================================
