@@ -297,6 +297,8 @@ impl Rect {
         Self { x1, y1, x2, y2 }
     }
 
+    pub fn splat(x: f32) -> Self { Self {x1: x, y1: x, x2: -x, y2: -x} }
+
     pub fn is_within(&self, point: Vec2) -> bool {
         self.x1 <= point.x && self.x2 >= point.x && self.y1 >= point.y && self.y2 <= point.y
     }
@@ -363,7 +365,7 @@ pub struct PageUp;
 pub struct PageDown;
 
 #[derive(Component)]
-pub struct Clickable;
+pub struct StaticClickable;
 
 #[derive(Component)]
 pub struct FailBlinker;
@@ -880,7 +882,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
         .insert(FailBlinker);
 
     add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png", 45, 28, SpriteBundle {
-        transform: Transform::from_xyz(8.0, -132.0, TOP_LEVEL),
+        transform: Transform::from_xyz(8.0, -132.0, TOP_LEVEL + TOP_LEVEL),
         visibility: Visibility { is_visible: false },
         ..default()
     }).insert(Name::new("X_FURNACE"))

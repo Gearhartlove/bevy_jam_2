@@ -370,7 +370,7 @@ impl Default for Gameflow {
 
 // ########################################################################
 
-trait Segment {
+pub trait Segment {
     fn is_complete(&self) -> bool;
 
     fn on_item_crafted(
