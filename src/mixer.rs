@@ -26,8 +26,10 @@ impl MixerRecipe {
     pub const SANDWICH: MixerRecipe = MixerRecipe::new(Element::SANDWICH_FILLINGS, Element::SPICY_TOAST, Element::SANDWICH);
     pub const COOKED_PORK: MixerRecipe = MixerRecipe::new(Element::RAW_PORK, Element::BOILING_WATER, Element::COOKED_PORK);
     pub const HARD_BOILED_EGG: MixerRecipe = MixerRecipe::new(Element::GRIFFON_EGG, Element::BOILING_WATER, Element::HARD_BOILED_EGG);
+    pub const NOODLE_DOUGH: MixerRecipe = MixerRecipe::new(Element::GRIFFON_EGG, Element::FANTASY_FLOUR, Element::NOODLE_DOUGH);
+    pub const CHOPSTICKS: MixerRecipe = MixerRecipe::new(Element::BONE_CHOPSTICK, Element::BONE_CHOPSTICK, Element::BONE_CHOPSTICKS);
 
-    pub const RECIPES: [MixerRecipe; 13] = [
+    pub const RECIPES: [MixerRecipe; 15] = [
         MixerRecipe::UTTER_ICE_CREAM,
         MixerRecipe::BREAD_DOUGH,
         MixerRecipe::ICE_CREAM_SANDWICH,
@@ -40,7 +42,9 @@ impl MixerRecipe {
         MixerRecipe::SANDWICH,
         MixerRecipe::COOKED_PORK,
         MixerRecipe::SANDWICH_FILLING,
-        MixerRecipe::HARD_BOILED_EGG
+        MixerRecipe::HARD_BOILED_EGG,
+        MixerRecipe::NOODLE_DOUGH,
+        MixerRecipe::CHOPSTICKS
     ];
 
     pub const fn new(first: Element, second: Element, result: Element) -> Self {

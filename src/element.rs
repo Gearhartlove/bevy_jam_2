@@ -53,12 +53,14 @@ impl Element {
     pub const BONE_CHOPSTICK : Element = Element::new("Bone Chopstick", "bone_chopstick", "Perfect for eating ramen with! Although it is missing a pair.");
     pub const BONE_CHOPSTICKS : Element = Element::new("Bone Chopsticks", "bone_chopsticks", "Now that they are paired up, It is read to use to eat something!");
     pub const PORK_BROTH : Element = Element::new("Pork Broth", "pork_broth", "The water turned into broth after boiling that pork. Now you have a delicious base for a soup of some kind.");
-    pub const DRIED_SEAWEED : Element = Element::new("Dried Seaweed", "dired_seaweed", "The smell isn't great, but the flavor is great! Used in eastern style recipes.");
+    pub const DRIED_SEAWEED : Element = Element::new("Dried Seaweed", "dried_seaweed", "The smell isn't great, but the flavor is great! Used in eastern style recipes.");
     pub const HARD_BOILED_EGG : Element = Element::new("Hard Boiled Egg", "hard_boiled_egg", "An egg that has been boiled. Amazing topping for any dish. Well not any dish but you get it.");
     pub const NOODLE_DOUGH : Element = Element::new("Noodle Dough", "noodle_dough", "Dough for making noodles! I wonder what to next...");
     pub const RAMEN_NOODLES : Element = Element::new("Ramen Noodles", "ramen_noodles", "Noodle perfectly made for the ultimate soup : Ramen. Just the right size and shape, this should make any ramen fan happy.");
     pub const COOKED_PORK : Element = Element::new("Cooked Pork", "cooked_pork", "Smells so good! This meat is probably the most tasty thing you have cooked so far.");
     pub const CHASHU : Element = Element::new("Chashu", "chashu", "Boiled and cut pork made in the traditional style. This meat is perfectly fatty and sweet for a stew of some sort.");
+
+    pub const RAMEN : Element = Element::new("", "", "");
 
     //pub const GRIFFON_EGGS: Element = Element::new("Griffon Eggs", "griffon_eggs", "Eggs bigger than you head, serves five");
 
