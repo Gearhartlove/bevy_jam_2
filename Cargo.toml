@@ -32,7 +32,6 @@ serde_json = "1.0.83"
 convert_case = "0.5.0"
 scan_dir = "0.3.3"
 bevy-inspector-egui = "0.12.1"
-bevy_rapier2d = "0.16.1"
 bevy_prototype_debug_lines = "0.8"
 
 # keep the following in sync with Bevy's dependencies

@@ -65,7 +65,7 @@ fn play_dialogue_voice(
         dialogue.stop();
         match game.npc_data.get_current_npc().unwrap().kind {
             NpcKind::Squee => {
-                dialogue.play(asset_server.load("sounds/squee_voice.wav")).looped().with_volume(0.05);
+                dialogue.play(asset_server.load("sounds/squee_voice.wav")).looped().with_volume(0.02);
             }
             NpcKind::Conrad => {
             }
@@ -92,17 +92,13 @@ fn stop_dialogue_voice(
 
     let difference = audio_manager.total_say_duration - audio_manager.say_progress;
 
-    // debug
-    // println!("difference: {} duration: {} progress/100: {}", difference, audio_manager.total_say_duration, audio_manager.say_progress);
-
     if difference < -0.5 {
-        println!("stop");
         dialogue.stop();
     }
 }
 
-fn page_turning(
-
-) {
-
-}
+// fn page_turning(
+//
+// ) {
+//
+// }
