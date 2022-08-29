@@ -1,8 +1,12 @@
 use bevy::prelude::*;
 use bevy::text::Text2dBounds;
+use bevy_inspector_egui::RegisterInspectable;
+use bevy_prototype_debug_lines::DebugLines;
+use crate::boss_fight::{Clickable, ClickableBundle, on_click};
 use crate::element::Element;
 use crate::game::GameManager;
-use crate::ui::{ElementInfoEvent, SLOT_LEVEL, TEXT_LEVEL, UI_LEVEL};
+use crate::{BossFightPlugin, GameHelper};
+use crate::ui::{StaticClickable, ElementInfoEvent, Rect, SLOT_LEVEL, TEXT_LEVEL, UI_LEVEL};
 
 pub struct PagePlugin;
 
@@ -14,10 +18,14 @@ impl PagePlugin {
 impl Plugin for PagePlugin {
     fn build(&self, app: &mut App) {
         app
+            .register_inspectable::<Clickable<PageCloseEvent>>()
+            .add_event::<PageCloseEvent>()
             .add_startup_system(setup)
-            .add_system_to_stage(CoreStage::PostUpdate, listen_for_right_click)
             .add_system(move_page)
-            .add_system(close_info);
+            .add_system(on_click::<PageCloseEvent>)
+            .add_system(close_info)
+            .add_system_to_stage(CoreStage::PostUpdate, on_click_close_page)
+            .add_system_to_stage(CoreStage::PostUpdate, listen_for_right_click);
     }
 }
 
@@ -98,6 +106,8 @@ struct Page;
 struct PageItemSprite;
 
 fn setup(mut game: ResMut<GameManager>, mut commands: Commands, asset_server: Res<AssetServer>) {
+
+
     let parent = commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
@@ -168,5 +178,39 @@ fn setup(mut game: ResMut<GameManager>, mut commands: Commands, asset_server: Re
         .insert(Name::new("Page Text"))
         .id();
 
-    commands.entity(parent).push_children(&[title, text, sprite]);
+    // spawn button
+    let button = commands.spawn()
+        // .insert(Rect::splat(50.))
+        .insert(Transform::from_xyz(-162., 272., 1.,))
+        .insert(GlobalTransform::default())
+        .insert(Clickable {
+                rect: Rect::new(-50., 50., 50., -50.),
+                event: PageCloseEvent
+        })
+        .insert(PageCloseButton)
+        .insert(Name::new("Page Button"))
+        .id();
+
+    commands.entity(parent).push_children(&[title, text, sprite, button]);
+}
+
+#[derive(Default, Debug)]
+struct PageCloseEvent;
+
+#[derive(Component)]
+struct PageCloseButton;
+
+fn on_click_close_page(
+    mut commands: Commands,
+    mut page_close_event_reader: EventReader<PageCloseEvent>,
+    mut page_query: Query<Entity, With<Page>>,
+) {
+    if !page_close_event_reader.is_empty() {
+        println!("event");
+        if let Ok(e) = page_query.get_single_mut() {
+            print!("move");
+            commands.entity(e).insert(MovingTo(PagePlugin::OFF_SCREEN_POS));
+        }
+        page_close_event_reader.clear();
+    }
 }

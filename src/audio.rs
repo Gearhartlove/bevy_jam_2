@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
+use crate::boss_fight::SetupBossFightEvent;
 use crate::game::GameManager;
 use crate::npc::{Npc, NpcKind, Say};
 
@@ -42,14 +43,20 @@ fn start_background_audio(asset_server: Res<AssetServer>, audio: Res<Audio>) {
     println!("start bg music");
     audio.play(asset_server.load("sounds/tavern_music.wav")).looped()
         .loop_from(7.0)
-        .with_volume(0.05);
+        .with_volume(0.2);
 }
 
-fn start_boss_audio(asset_server: Res<AssetServer>, audio: Res<Audio>) {
-    audio.stop();
-    audio.play(asset_server.load("sounds/boss_music.wav")).looped()
-        .loop_from(2.0)
-        .with_volume(0.05);
+fn start_boss_audio(
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
+    on_boss_enter: EventReader<SetupBossFightEvent>
+) {
+    if !on_boss_enter.is_empty() {
+        audio.stop();
+        audio.play(asset_server.load("sounds/boss_music.wav")).looped()
+            .loop_from(2.0)
+            .with_volume(0.2);
+    }
 }
 
 fn play_dialogue_voice(
@@ -65,12 +72,17 @@ fn play_dialogue_voice(
         dialogue.stop();
         match game.npc_data.get_current_npc().unwrap().kind {
             NpcKind::Squee => {
-                dialogue.play(asset_server.load("sounds/squee_voice.wav")).looped().with_volume(0.02);
+                dialogue.play(asset_server.load("sounds/squee_voice.wav")).looped().with_volume(0.08);
             }
             NpcKind::Conrad => {
+                dialogue.play(asset_server.load("sounds/conrad_voice.wav")).looped().with_volume(0.08);
             }
-            NpcKind::Pumkinhead => {}
-            NpcKind::Gordon => {}
+            NpcKind::Pumkinhead => {
+                dialogue.play(asset_server.load("sounds/pumpkinhead_voice.wav")).looped().with_volume(0.08);
+            }
+            NpcKind::Gordon => {
+                dialogue.play(asset_server.load("sounds/gordon_voice.wav")).looped().with_volume(0.08);
+            }
         }
     }
 }
@@ -96,9 +108,3 @@ fn stop_dialogue_voice(
         dialogue.stop();
     }
 }
-
-// fn page_turning(
-//
-// ) {
-//
-// }

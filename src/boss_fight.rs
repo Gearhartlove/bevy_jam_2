@@ -57,8 +57,8 @@ pub struct TimeCounter;
 
 #[derive(Component, Clone)]
 pub struct Clickable<T> where T : Sized + Default {
-    rect : Rect,
-    event : T
+    pub rect : Rect,
+    pub event : T
 }
 
 impl <T> Default for Clickable<T> where T : Sized + Default {
@@ -102,9 +102,9 @@ pub struct BossTimer {
 
 #[derive(Bundle, Clone)]
 pub struct ClickableBundle<T> where T : Default + Sized + Send + Sync + 'static {
-    transform : Transform,
-    global_transform : GlobalTransform,
-    clickable : Clickable<T>
+    pub transform : Transform,
+    pub global_transform : GlobalTransform,
+    pub clickable : Clickable<T>
 }
 
 impl <T> Default for ClickableBundle<T> where T : Default + Sized + Send + Sync + 'static {

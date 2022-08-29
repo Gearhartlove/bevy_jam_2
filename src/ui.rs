@@ -363,7 +363,7 @@ pub struct PageUp;
 pub struct PageDown;
 
 #[derive(Component)]
-pub struct Clickable;
+pub struct StaticClickable;
 
 #[derive(Component)]
 pub struct FailBlinker;
@@ -860,7 +860,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
 
     commands.spawn_bundle(Text2dBundle {
         text: Text::from_section("Test", text_style),
-        transform: Transform::from_xyz(-566.0, -292.0, TEXT_LEVEL),
+        transform: Transform::from_xyz(-606.0, -292.0, TEXT_LEVEL),
         text_2d_size: Text2dSize {
             size: Vec2::new(256.0, 128.0)
         },
@@ -894,7 +894,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_i
         .insert(FailBlinker);
 
     add_scaled_pixel_asset(&mut commands, &asset_server, "sprites/hor_x.png", 45, 28, SpriteBundle {
-        transform: Transform::from_xyz(8.0, -132.0, TOP_LEVEL),
+        transform: Transform::from_xyz(8.0, -132.0, TOP_LEVEL + TOP_LEVEL),
         visibility: Visibility { is_visible: false },
         ..default()
     }).insert(Name::new("X_FURNACE"))
