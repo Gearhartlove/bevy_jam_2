@@ -416,7 +416,7 @@ impl Default for Gameflow {
             .add_segment(StartBossFightSegment)
 
             .add_segment(NpcDialogueSegment::new()
-                .with_line("I will time you. You have 10 minutes to complete.")
+                .with_line("I will time you. You have 10 minutes to complete the dish.")
                 .with_line("This ramen must be made with eight ingredients only. I will give you a description of what I want now.")
                 .with_line("Listen close, because I wont repeat myself.")
                 .with_line("Seriously, I WONT repeat myself.")
@@ -432,7 +432,7 @@ impl Default for Gameflow {
                 .with_line("NOW!!!!")
             )
 
-            .add_segment(CraftingSegment::new(Element::RAMEN, false)
+            .add_segment(CraftingSegment::new(Element::RAMEN, true)
                 .with_hint("Make the ramen! What what are you waiting for?")
                 .with_hint("I told you I wouldn't repeat myself.")
                 .with_comment(&Element::PORK_BROTH, "Wow. Good use of your ingredients.")
@@ -442,7 +442,6 @@ impl Default for Gameflow {
                 .with_comment(&Element::CHASHU, "Perfectly cooked and cut. A man class after all.")
                 .with_comment(&Element::NOODLE_DOUGH, "Ah, interesting.")
                 .with_comment(&Element::RAMEN_NOODLES, "That is a nice cut of noodles.")
-                .with_comment(&Element::RAMEN, "That is the ticket! Now let me taste it.")
             )
 
             .add_segment(NpcDialogueSegment::new()
@@ -618,10 +617,11 @@ impl Segment for CraftingSegment {
             if element == self.goal {
                 self.is_thing_crafted = true;
             }
-            if let Some(comment) = self.comments.get(&element) {
-                let duration = game.npc_data.say(commands, comment.as_str());
-                event_caller.say_event = Some(SayEvent(duration));
-            }
+        }
+
+        if let Some(comment) = self.comments.get(&element) {
+            let duration = game.npc_data.say(commands, comment.as_str());
+            event_caller.say_event = Some(SayEvent(duration));
         }
     }
 
@@ -644,10 +644,6 @@ impl Segment for CraftingSegment {
         if !self.continue_on_craft {
             if element == self.goal {
                 self.is_thing_crafted = true;
-            }
-            if let Some(comment) = self.comments.get(&element) {
-                let duration = game.npc_data.say(commands, comment.as_str());
-                event_caller.say_event = Some(SayEvent(duration));
             }
         }
     }
